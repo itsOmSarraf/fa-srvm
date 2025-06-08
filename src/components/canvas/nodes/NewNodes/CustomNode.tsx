@@ -64,7 +64,10 @@ export const CustomNode = ({ data, id }: { data: CustomNodeData; id: string }) =
     const renderOutputHandles = () => {
         const handles = [];
         for (let i = 0; i < outputCount; i++) {
-            const topOffset = outputCount === 1 ? 0 : (i * 20) - ((outputCount - 1) * 10);
+            const totalHeight = outputCount * 30;
+            const startTop = 50 - (totalHeight / 2) + 15; // Center the group and add offset for first handle
+            const handleTop = startTop + (i * 30);
+
             handles.push(
                 <Handle
                     key={`output-${i}`}
@@ -72,9 +75,13 @@ export const CustomNode = ({ data, id }: { data: CustomNodeData; id: string }) =
                     position={Position.Right}
                     id={`output-${i}`}
                     style={{
-                        top: `50%`,
-                        transform: `translateY(${topOffset}px)`,
+                        top: `${handleTop}%`,
+                        right: '-6px',
                         backgroundColor: '#555',
+                        width: '12px',
+                        height: '12px',
+                        border: '2px solid white',
+                        position: 'absolute',
                     }}
                 />
             );
@@ -88,7 +95,12 @@ export const CustomNode = ({ data, id }: { data: CustomNodeData; id: string }) =
             <Handle
                 type="target"
                 position={Position.Left}
-                style={{ backgroundColor: '#555' }}
+                style={{
+                    backgroundColor: '#555',
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid white',
+                }}
             />
 
             {/* Header with edit functionality */}
