@@ -36,7 +36,7 @@ export function SidebarRight() {
                     className="fixed right-0 top-0 z-30 h-full"
                 >
                     <SidebarProvider>
-                        <Sidebar side="right" className="mt-20 w-80 h-full border-l border-gray-200 shadow-lg">
+                        <Sidebar side="right" className="mt-20 w-80 h-full border-l border-gray-200 shadow-lg" data-tour="sidebar-right">
                             <SidebarContent className="p-0">
                                 <SidebarGroup className="p-0">
                                     <SidebarGroupContent className="p-0">

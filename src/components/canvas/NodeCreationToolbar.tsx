@@ -240,6 +240,7 @@ export const NodeCreationToolbar: React.FC = () => {
                         style={{
                             cursor: isDragging ? 'grabbing' : 'grab'
                         }}
+                        data-tour="node-toolbar"
                     >
                         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-200/50 p-2 flex items-center gap-1">
                             <motion.div

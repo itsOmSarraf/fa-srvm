@@ -109,6 +109,7 @@ export function AIWorkflowChat() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 1, type: "spring", stiffness: 300, damping: 30 }}
+                data-tour="ai-chat"
             >
                 <Button
                     onClick={() => setIsOpen(true)}

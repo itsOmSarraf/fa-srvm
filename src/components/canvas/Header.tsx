@@ -9,6 +9,7 @@ import { PersistenceStatus, PersistenceControls } from './PersistenceControls';
 export function Header() {
     return (
         <motion.header
+            data-tour="header"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{
@@ -82,7 +83,7 @@ export function Header() {
                 </motion.div>
 
                 {/* Add persistence controls to the right side */}
-                <div className="ml-auto">
+                <div className="ml-auto" data-tour="header-persistence">
                     <PersistenceControls />
                 </div>
             </div>

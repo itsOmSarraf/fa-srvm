@@ -167,7 +167,7 @@ export function WorkflowActionHandler({
                                 <span>Connect {action.sourceId} → {action.targetId}</span>
                             )}
                             {action.type === 'ADD_TRANSITION' && (
-                                <span>Add transition "{action.label}" to {action.nodeId}</span>
+                                <span>Add transition &quot;{action.label}&quot; to {action.nodeId}</span>
                             )}
                         </li>
                     ))}
