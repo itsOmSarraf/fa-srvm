@@ -15,6 +15,7 @@ import { edgeTypes } from './edges';
 import { useFlowStore } from '@/stores/flowStore';
 import { NodeCreationToolbar } from './NodeCreationToolbar';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useSmartNodePlacement } from '@/hooks/useSmartNodePlacement';
 
 import '@xyflow/react/dist/style.css';
 
@@ -50,9 +51,11 @@ export const Playground = () => {
         setEdges,
         onConnect,
         selectNode,
-        selectedNodeId,
-        addNode
+        selectedNodeId
     } = useFlowStore();
+
+    // Use smart node placement hook
+    const { addNodeSmart } = useSmartNodePlacement();
 
     // Use ReactFlow's internal state management for smoother interactions
     const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(nodes);
@@ -96,18 +99,13 @@ export const Playground = () => {
     const onDrop = useCallback((event: React.DragEvent) => {
         event.preventDefault();
 
-        const reactFlowBounds = event.currentTarget.getBoundingClientRect();
         const nodeType = event.dataTransfer.getData('application/reactflow');
 
         if (!nodeType) return;
 
-        const position = {
-            x: event.clientX - reactFlowBounds.left,
-            y: event.clientY - reactFlowBounds.top,
-        };
-
-        addNode(nodeType as any, position);
-    }, [addNode]);
+        // Use smart positioning instead of exact drop position
+        addNodeSmart(nodeType as any);
+    }, [addNodeSmart]);
 
     // Add selection styling to nodes
     const nodesWithSelection = flowNodes.map(node => ({

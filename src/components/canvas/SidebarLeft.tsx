@@ -2,6 +2,7 @@ import { Hash, Cog, Phone, Grid3X3, Square, Plus, ChevronLeft, ChevronRight } fr
 import { useFlowStore, NodeTypeKey } from "@/stores/flowStore"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useSmartNodePlacement } from "@/hooks/useSmartNodePlacement"
 
 import {
     Sidebar,
@@ -61,18 +62,12 @@ const items: Array<{
     ]
 
 export function SidebarLeft() {
-    const addNode = useFlowStore((state) => state.addNode);
     const isSidebarCollapsed = useFlowStore((state) => state.isSidebarCollapsed);
     const setSidebarCollapsed = useFlowStore((state) => state.setSidebarCollapsed);
+    const { addNodeSmart } = useSmartNodePlacement();
 
     const handleAddNode = (nodeType: NodeTypeKey) => {
-        // Add node at a reasonable default position with some randomness
-        const position = {
-            x: Math.random() * 400 + 200,
-            y: Math.random() * 300 + 150,
-        };
-
-        addNode(nodeType, position);
+        addNodeSmart(nodeType);
     };
 
     const handleDragStart = (event: React.DragEvent, nodeType: NodeTypeKey) => {

@@ -3,6 +3,7 @@ import { Hash, Cog, Phone, Grid3X3, Square, Plus, GripVertical } from 'lucide-re
 import { useFlowStore, NodeTypeKey } from '@/stores/flowStore';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSmartNodePlacement } from '@/hooks/useSmartNodePlacement';
 
 const nodeTypes = [
     {
@@ -43,7 +44,8 @@ const nodeTypes = [
 ];
 
 export const NodeCreationToolbar: React.FC = () => {
-    const { addNode, isSidebarCollapsed, selectedNodeId } = useFlowStore();
+    const { isSidebarCollapsed, selectedNodeId } = useFlowStore();
+    const { addNodeSmart } = useSmartNodePlacement();
     const [position, setPosition] = useState({ x: 0, y: 0 }); // Track both X and Y now
     const [isDragging, setIsDragging] = useState(false);
     const [showToolbar, setShowToolbar] = useState(false);
@@ -147,17 +149,8 @@ export const NodeCreationToolbar: React.FC = () => {
     }, []);
 
     const handleQuickAdd = useCallback((nodeType: NodeTypeKey) => {
-        const bounds = getVisibleBounds();
-        const centerX = (bounds.left + bounds.right + 280) / 2;
-        const centerY = window.innerHeight / 2;
-
-        const nodePosition = {
-            x: centerX + (Math.random() - 0.5) * 200,
-            y: centerY + (Math.random() - 0.5) * 200,
-        };
-
-        addNode(nodeType, nodePosition);
-    }, [addNode, getVisibleBounds]);
+        addNodeSmart(nodeType);
+    }, [addNodeSmart]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);

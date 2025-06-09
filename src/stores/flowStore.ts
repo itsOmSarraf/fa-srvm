@@ -62,73 +62,11 @@ export interface FlowNode extends Node {
 	data: NodeConfig;
 }
 
-interface FlowState {
-	nodes: FlowNode[];
-	edges: Edge[];
-	selectedNodeId: string | null;
-	isSidebarCollapsed: boolean;
-
-	// Actions
-	addNode: (nodeType: NodeTypeKey, position: { x: number; y: number }) => void;
-	updateNode: (nodeId: string, data: Partial<NodeConfig>) => void;
-	selectNode: (nodeId: string | null) => void;
-	setNodes: (nodes: FlowNode[]) => void;
-	setEdges: (edges: Edge[]) => void;
-	onConnect: (connection: Connection) => void;
-	deleteNode: (nodeId: string) => void;
-	deleteEdge: (edgeId: string) => void;
-	addTransition: (nodeId: string) => void;
-	removeTransition: (nodeId: string, transitionId: string) => void;
-	updateTransition: (
-		nodeId: string,
-		transitionId: string,
-		updates: Partial<Transition>
-	) => void;
-	setSidebarCollapsed: (collapsed: boolean) => void;
-	// Persistence actions
-	clearStorage: () => void;
-	exportFlow: () => string;
-	importFlow: (flowData: string) => boolean;
-}
-
-// Default flow state for initialization and reset
-const getDefaultFlowState = () => ({
-	nodes: [
-		{
-			id: 'start',
-			type: 'input',
-			position: { x: 100, y: 100 },
-			data: {
-				id: 'start',
-				label: 'Start',
-				type: 'conversation' as NodeTypeKey,
-				outputCount: 1,
-				transitions: [
-					{
-						id: 'start-transition',
-						label: 'Begin',
-						condition: ''
-					}
-				]
-			},
-			draggable: true,
-			deletable: false
-		},
-		{
-			id: 'node-1',
-			type: 'conversation',
-			position: { x: 400, y: 100 },
-			data: {
-				...createDefaultNodeData('conversation', 'node-1')
-			}
-		}
-	] as FlowNode[],
-	edges: [] as Edge[],
-	selectedNodeId: null as string | null,
-	isSidebarCollapsed: false
-});
-
-const createDefaultNodeData = (type: NodeTypeKey, id: string): NodeConfig => {
+// Helper function for creating node data - exported for use in hooks
+export const createDefaultNodeData = (
+	type: NodeTypeKey,
+	id: string
+): NodeConfig => {
 	const baseData: NodeConfig = {
 		id,
 		label: '',
@@ -191,26 +129,84 @@ const createDefaultNodeData = (type: NodeTypeKey, id: string): NodeConfig => {
 
 let nodeIdCounter = 1;
 
+// Export function to get next node ID
+export const getNextNodeId = () => `node-${++nodeIdCounter}`;
+
+interface FlowState {
+	nodes: FlowNode[];
+	edges: Edge[];
+	selectedNodeId: string | null;
+	isSidebarCollapsed: boolean;
+
+	// Actions
+	updateNode: (nodeId: string, data: Partial<NodeConfig>) => void;
+	selectNode: (nodeId: string | null) => void;
+	setNodes: (nodes: FlowNode[]) => void;
+	setEdges: (edges: Edge[]) => void;
+	onConnect: (connection: Connection) => void;
+	deleteNode: (nodeId: string) => void;
+	deleteEdge: (edgeId: string) => void;
+	addTransition: (nodeId: string) => void;
+	removeTransition: (nodeId: string, transitionId: string) => void;
+	updateTransition: (
+		nodeId: string,
+		transitionId: string,
+		updates: Partial<Transition>
+	) => void;
+	setSidebarCollapsed: (collapsed: boolean) => void;
+	// Internal node creation (used by smart placement hook)
+	_createNode: (
+		nodeType: NodeTypeKey,
+		position: { x: number; y: number }
+	) => void;
+	// Persistence actions
+	clearStorage: () => void;
+	exportFlow: () => string;
+	importFlow: (flowData: string) => boolean;
+}
+
+// Default flow state for initialization and reset
+const getDefaultFlowState = () => ({
+	nodes: [
+		{
+			id: 'start',
+			type: 'input',
+			position: { x: 100, y: 100 },
+			data: {
+				id: 'start',
+				label: 'Start',
+				type: 'conversation' as NodeTypeKey,
+				outputCount: 1,
+				transitions: [
+					{
+						id: 'start-transition',
+						label: 'Begin',
+						condition: ''
+					}
+				]
+			},
+			draggable: true,
+			deletable: false
+		},
+		{
+			id: 'node-1',
+			type: 'conversation',
+			position: { x: 400, y: 100 },
+			data: {
+				...createDefaultNodeData('conversation', 'node-1')
+			}
+		}
+	] as FlowNode[],
+	edges: [] as Edge[],
+	selectedNodeId: null as string | null,
+	isSidebarCollapsed: false
+});
+
 export const useFlowStore = create<FlowState>()(
 	persist(
 		(set, get) => ({
 			// Initial state using default values
 			...getDefaultFlowState(),
-
-			addNode: (nodeType: NodeTypeKey, position: { x: number; y: number }) => {
-				const id = `node-${++nodeIdCounter}`;
-				const newNode: FlowNode = {
-					id,
-					type: nodeType,
-					position,
-					data: createDefaultNodeData(nodeType, id)
-				};
-
-				set((state) => ({
-					nodes: [...state.nodes, newNode],
-					selectedNodeId: id
-				}));
-			},
 
 			updateNode: (nodeId: string, data: Partial<NodeConfig>) => {
 				set((state) => ({
@@ -324,6 +320,25 @@ export const useFlowStore = create<FlowState>()(
 
 			setSidebarCollapsed: (collapsed: boolean) => {
 				set({ isSidebarCollapsed: collapsed });
+			},
+
+			// Internal node creation (used by smart placement hook)
+			_createNode: (
+				nodeType: NodeTypeKey,
+				position: { x: number; y: number }
+			) => {
+				const id = getNextNodeId();
+				const newNode: FlowNode = {
+					id,
+					type: nodeType,
+					position,
+					data: createDefaultNodeData(nodeType, id)
+				};
+
+				set((state) => ({
+					nodes: [...state.nodes, newNode],
+					selectedNodeId: id
+				}));
 			},
 
 			// Persistence actions
