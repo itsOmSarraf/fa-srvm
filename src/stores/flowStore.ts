@@ -89,7 +89,15 @@ export const createDefaultNodeData = (
 			return {
 				...baseData,
 				label: 'Conversation',
-				prompt: 'Enter your conversation prompt here...'
+				prompt: 'Enter your conversation prompt here...',
+				outputCount: 1,
+				transitions: [
+					{
+						id: `${id}-continue`,
+						label: 'Continue',
+						condition: ''
+					}
+				]
 			};
 		case 'function':
 			return {
@@ -97,14 +105,40 @@ export const createDefaultNodeData = (
 				label: 'Function',
 				functionCode:
 					'function execute() {\n  // Your code here\n  return true;\n}',
-				parameters: {}
+				parameters: {},
+				outputCount: 2,
+				transitions: [
+					{
+						id: `${id}-success`,
+						label: 'Success',
+						condition: 'result === true'
+					},
+					{
+						id: `${id}-error`,
+						label: 'Error',
+						condition: 'result === false'
+					}
+				]
 			};
 		case 'callTransfer':
 			return {
 				...baseData,
 				label: 'Call Transfer',
 				transferNumber: '',
-				transferType: 'warm'
+				transferType: 'warm',
+				outputCount: 2,
+				transitions: [
+					{
+						id: `${id}-complete`,
+						label: 'Transfer Complete',
+						condition: 'transfer_status === "completed"'
+					},
+					{
+						id: `${id}-failed`,
+						label: 'Transfer Failed',
+						condition: 'transfer_status === "failed"'
+					}
+				]
 			};
 		case 'pressDigit':
 			return {
@@ -112,7 +146,15 @@ export const createDefaultNodeData = (
 				label: 'Press Digit',
 				pauseDetectionDelay: 2000,
 				maxDigits: 1,
-				terminationDigit: '#'
+				terminationDigit: '#',
+				outputCount: 1,
+				transitions: [
+					{
+						id: `${id}-digit`,
+						label: 'Digit Pressed',
+						condition: 'digit_received'
+					}
+				]
 			};
 		case 'endCall':
 			return {
@@ -133,11 +175,22 @@ let nodeIdCounter = 2; // Start at 2 since node-1 already exists in default stat
 // Export function to get next node ID
 export const getNextNodeId = () => `node-${++nodeIdCounter}`;
 
+interface HistoryState {
+	nodes: FlowNode[];
+	edges: Edge[];
+	timestamp: number;
+}
+
 interface FlowState {
 	nodes: FlowNode[];
 	edges: Edge[];
 	selectedNodeId: string | null;
 	isSidebarCollapsed: boolean;
+	// Undo/Redo functionality
+	history: HistoryState[];
+	currentHistoryIndex: number;
+	canUndo: boolean;
+	canRedo: boolean;
 
 	// Actions
 	updateNode: (nodeId: string, data: Partial<NodeConfig>) => void;
@@ -160,6 +213,10 @@ interface FlowState {
 		nodeType: NodeTypeKey,
 		position: { x: number; y: number }
 	) => void;
+	// Undo/Redo actions
+	undo: () => void;
+	redo: () => void;
+	saveToHistory: () => void;
 	// Persistence actions
 	clearStorage: () => void;
 	exportFlow: () => string;
@@ -167,41 +224,59 @@ interface FlowState {
 }
 
 // Default flow state for initialization and reset
-const getDefaultFlowState = () => ({
-	nodes: [
-		{
-			id: 'start',
-			type: 'input',
-			position: { x: 100, y: 100 },
-			data: {
+const getDefaultFlowState = () => {
+	const initialState = {
+		nodes: [
+			{
 				id: 'start',
-				label: 'Start',
-				type: 'conversation' as NodeTypeKey,
-				outputCount: 1,
-				transitions: [
-					{
-						id: 'start-transition',
-						label: 'Begin',
-						condition: ''
-					}
-				]
+				type: 'input',
+				position: { x: 100, y: 100 },
+				data: {
+					id: 'start',
+					label: 'Start',
+					type: 'conversation' as NodeTypeKey,
+					outputCount: 1,
+					transitions: [
+						{
+							id: 'start-transition',
+							label: 'Begin',
+							condition: ''
+						}
+					]
+				},
+				draggable: true,
+				deletable: false
 			},
-			draggable: true,
-			deletable: false
-		},
-		{
-			id: 'node-1',
-			type: 'conversation',
-			position: { x: 400, y: 100 },
-			data: {
-				...createDefaultNodeData('conversation', 'node-1')
+			{
+				id: 'node-1',
+				type: 'conversation',
+				position: { x: 400, y: 100 },
+				data: {
+					...createDefaultNodeData('conversation', 'node-1')
+				}
 			}
+		] as FlowNode[],
+		edges: [] as Edge[],
+		selectedNodeId: null as string | null,
+		isSidebarCollapsed: false,
+		history: [] as HistoryState[],
+		currentHistoryIndex: -1,
+		canUndo: false,
+		canRedo: false
+	};
+
+	// Add initial state to history
+	initialState.history = [
+		{
+			nodes: [...initialState.nodes],
+			edges: [...initialState.edges],
+			timestamp: Date.now()
 		}
-	] as FlowNode[],
-	edges: [] as Edge[],
-	selectedNodeId: null as string | null,
-	isSidebarCollapsed: false
-});
+	];
+	initialState.currentHistoryIndex = 0;
+
+	return initialState;
+};
 
 export const useFlowStore = create<FlowState>()(
 	persist(
@@ -350,6 +425,74 @@ export const useFlowStore = create<FlowState>()(
 				set({ isSidebarCollapsed: collapsed });
 			},
 
+			// Undo/Redo functionality
+			saveToHistory: () => {
+				set((state) => {
+					const newHistoryEntry: HistoryState = {
+						nodes: [...state.nodes],
+						edges: [...state.edges],
+						timestamp: Date.now()
+					};
+
+					// Remove any redo history when making a new change
+					const newHistory = state.history.slice(
+						0,
+						state.currentHistoryIndex + 1
+					);
+					newHistory.push(newHistoryEntry);
+
+					// Keep history limited to 50 entries
+					if (newHistory.length > 50) {
+						newHistory.shift();
+					}
+
+					return {
+						history: newHistory,
+						currentHistoryIndex: newHistory.length - 1,
+						canUndo: newHistory.length > 1,
+						canRedo: false
+					};
+				});
+			},
+
+			undo: () => {
+				set((state) => {
+					if (state.currentHistoryIndex > 0) {
+						const previousIndex = state.currentHistoryIndex - 1;
+						const previousState = state.history[previousIndex];
+
+						return {
+							nodes: [...previousState.nodes],
+							edges: [...previousState.edges],
+							currentHistoryIndex: previousIndex,
+							canUndo: previousIndex > 0,
+							canRedo: true,
+							selectedNodeId: null
+						};
+					}
+					return state;
+				});
+			},
+
+			redo: () => {
+				set((state) => {
+					if (state.currentHistoryIndex < state.history.length - 1) {
+						const nextIndex = state.currentHistoryIndex + 1;
+						const nextState = state.history[nextIndex];
+
+						return {
+							nodes: [...nextState.nodes],
+							edges: [...nextState.edges],
+							currentHistoryIndex: nextIndex,
+							canUndo: true,
+							canRedo: nextIndex < state.history.length - 1,
+							selectedNodeId: null
+						};
+					}
+					return state;
+				});
+			},
+
 			// Internal node creation (used by smart placement hook)
 			_createNode: (
 				nodeType: NodeTypeKey,
@@ -379,6 +522,7 @@ export const useFlowStore = create<FlowState>()(
 					// CRITICAL: Update persisted nodeIdCounter immediately
 					queueMicrotask(() => {
 						const currentState = get();
+						currentState.saveToHistory();
 						console.log(
 							'Node created and persisted:',
 							id,
