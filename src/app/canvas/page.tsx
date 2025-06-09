@@ -7,7 +7,7 @@ import { SidebarRight } from '@/components/canvas/SidebarRight'
 import { motion } from 'framer-motion'
 import { useFlowStore } from '@/stores/flowStore'
 
-function page() {
+function Page() {
     const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
     const isSidebarCollapsed = useFlowStore((state) => state.isSidebarCollapsed);
 
@@ -45,4 +45,4 @@ function page() {
     )
 }
 
-export default page
+export default Page

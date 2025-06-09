@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useFlowStore, NodeTypeKey } from '@/stores/flowStore';
 
 const keyToNodeType: Record<string, NodeTypeKey> = {
@@ -13,7 +13,7 @@ export const useKeyboardShortcuts = () => {
 	const { addNode, isSidebarCollapsed, selectedNodeId } = useFlowStore();
 
 	// Calculate smart placement area based on sidebar states
-	const getPlacementArea = () => {
+	const getPlacementArea = useCallback(() => {
 		const leftMargin = isSidebarCollapsed ? 50 : 300; // Account for left sidebar
 		const rightMargin = selectedNodeId ? 350 : 50; // Account for right sidebar
 		const topMargin = 120; // Account for header
@@ -40,9 +40,9 @@ export const useKeyboardShortcuts = () => {
 				center: topMargin + availableHeight / 2
 			}
 		};
-	};
+	}, [isSidebarCollapsed, selectedNodeId]);
 
-	const getRandomPosition = () => {
+	const getRandomPosition = useCallback(() => {
 		const area = getPlacementArea();
 
 		// Use a more generous random spread around the center
@@ -53,7 +53,7 @@ export const useKeyboardShortcuts = () => {
 			x: area.x.center + (Math.random() - 0.5) * spreadX,
 			y: area.y.center + (Math.random() - 0.5) * spreadY
 		};
-	};
+	}, [getPlacementArea]);
 
 	useEffect(() => {
 		const handleKeyPress = (event: KeyboardEvent) => {
@@ -80,5 +80,5 @@ export const useKeyboardShortcuts = () => {
 
 		document.addEventListener('keydown', handleKeyPress);
 		return () => document.removeEventListener('keydown', handleKeyPress);
-	}, [addNode, isSidebarCollapsed, selectedNodeId]); // Add dependencies for recalculation
+	}, [addNode, getRandomPosition]); // Add dependencies for recalculation
 };

@@ -230,6 +230,7 @@ export const useAdvancedPersistence = (
 		if (autoBackup && nodes.length > 0) {
 			createBackup();
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []); // Only run once on mount
 
 	return {

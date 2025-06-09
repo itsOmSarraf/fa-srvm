@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Hash, Cog, Phone, Grid3X3, Square, Plus, GripVertical } from 'lucide-react';
 import { useFlowStore, NodeTypeKey } from '@/stores/flowStore';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,7 @@ export const NodeCreationToolbar: React.FC = () => {
     });
 
     // Calculate visible bounds based on sidebar states
-    const getVisibleBounds = () => {
+    const getVisibleBounds = useCallback(() => {
         const leftMargin = isSidebarCollapsed ? 20 : 276; // 256px + 20px padding
         const rightMargin = selectedNodeId ? 340 : 20; // 320px + 20px padding
         const toolbarWidth = 280; // Approximate width of toolbar
@@ -68,10 +68,10 @@ export const NodeCreationToolbar: React.FC = () => {
             bottom: bottomPosition,
             maxTop: maxUpward
         };
-    };
+    }, [isSidebarCollapsed, selectedNodeId]);
 
     // Auto-adjust position to stay in visible area
-    const adjustPositionToVisibleArea = () => {
+    const adjustPositionToVisibleArea = useCallback(() => {
         const bounds = getVisibleBounds();
 
         setPosition(prev => {
@@ -95,7 +95,7 @@ export const NodeCreationToolbar: React.FC = () => {
 
             return { x: newX, y: newY };
         });
-    };
+    }, [getVisibleBounds]);
 
     // Show toolbar when left sidebar is collapsed
     useEffect(() => {
@@ -106,14 +106,14 @@ export const NodeCreationToolbar: React.FC = () => {
         } else {
             setShowToolbar(false);
         }
-    }, [isSidebarCollapsed]);
+    }, [isSidebarCollapsed, adjustPositionToVisibleArea]);
 
     // Adjust position when sidebar states change (but not initial show)
     useEffect(() => {
         if (showToolbar && !isInitialShow) {
             adjustPositionToVisibleArea();
         }
-    }, [selectedNodeId, showToolbar]);
+    }, [selectedNodeId, showToolbar, isInitialShow, adjustPositionToVisibleArea]);
 
     // Listen for keyboard shortcuts to temporarily show toolbar
     useEffect(() => {
@@ -146,7 +146,7 @@ export const NodeCreationToolbar: React.FC = () => {
         return () => document.removeEventListener('keydown', handleKeyPress);
     }, []);
 
-    const handleQuickAdd = (nodeType: NodeTypeKey) => {
+    const handleQuickAdd = useCallback((nodeType: NodeTypeKey) => {
         const bounds = getVisibleBounds();
         const centerX = (bounds.left + bounds.right + 280) / 2;
         const centerY = window.innerHeight / 2;
@@ -157,7 +157,7 @@ export const NodeCreationToolbar: React.FC = () => {
         };
 
         addNode(nodeType, nodePosition);
-    };
+    }, [addNode, getVisibleBounds]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
@@ -169,7 +169,7 @@ export const NodeCreationToolbar: React.FC = () => {
         };
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging) return;
 
         const deltaX = e.clientX - dragRef.current.startX;
@@ -183,11 +183,11 @@ export const NodeCreationToolbar: React.FC = () => {
             x: Math.max(bounds.left, Math.min(newX, bounds.right)),
             y: Math.max(bounds.maxTop, Math.min(newY, bounds.bottom)) // Only allow upward movement
         });
-    };
+    }, [isDragging, getVisibleBounds]);
 
-    const handleMouseUp = () => {
+    const handleMouseUp = useCallback(() => {
         setIsDragging(false);
-    };
+    }, []);
 
     useEffect(() => {
         if (isDragging) {
@@ -198,7 +198,7 @@ export const NodeCreationToolbar: React.FC = () => {
                 document.removeEventListener('mouseup', handleMouseUp);
             };
         }
-    }, [isDragging]);
+    }, [isDragging, handleMouseMove, handleMouseUp]);
 
     // Handle window resize to adjust position
     useEffect(() => {
@@ -210,7 +210,7 @@ export const NodeCreationToolbar: React.FC = () => {
 
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [showToolbar]);
+    }, [showToolbar, adjustPositionToVisibleArea]);
 
     // Calculate initial animation position (from left sidebar)
     const getInitialPosition = () => {
