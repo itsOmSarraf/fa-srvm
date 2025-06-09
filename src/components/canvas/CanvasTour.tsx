@@ -214,7 +214,7 @@ export function CanvasTour({ autoStart = false }: CanvasTourProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
-                className="fixed top-4 right-4 z-40"
+                className="fixed bottom-4 left-4 z-40"
             >
                 <Button
                     onClick={startTour}
