@@ -5,6 +5,7 @@ import { Header } from '@/components/canvas/Header'
 import { SidebarLeft } from '@/components/canvas/SidebarLeft'
 import { SidebarRight } from '@/components/canvas/SidebarRight'
 import { AIWorkflowChat } from '@/components/canvas/AIWorkflowChat'
+import { CanvasTour } from '@/components/canvas/CanvasTour'
 import { motion } from 'framer-motion'
 import { useFlowStore } from '@/stores/flowStore'
 
@@ -43,6 +44,7 @@ function Page() {
                 <SidebarRight />
             </motion.div>
             <AIWorkflowChat />
+            <CanvasTour />
         </motion.div>
     )
 }

@@ -87,6 +87,7 @@ export function SidebarLeft() {
                         exit={{ x: -50, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                         className="fixed left-0 top-20 z-20"
+                        data-tour="sidebar-left-toggle"
                     >
                         <Button
                             variant="ghost"
@@ -113,7 +114,7 @@ export function SidebarLeft() {
                         className="fixed left-0 top-0 z-30 h-full"
                     >
                         <SidebarProvider>
-                            <Sidebar className="mt-20 w-64 h-full border-r border-gray-200 shadow-lg bg-white">
+                            <Sidebar className="mt-20 w-64 h-full border-r border-gray-200 shadow-lg bg-white" data-tour="sidebar-left">
                                 {/* Collapse Button */}
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.8 }}
