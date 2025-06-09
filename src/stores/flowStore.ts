@@ -17,6 +17,11 @@ export interface Transition {
 	value?: string;
 }
 
+export interface VoiceSettings {
+	voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+	speed?: number;
+}
+
 export interface NodeConfig extends Record<string, unknown> {
 	// Common properties
 	id: string;
@@ -24,6 +29,13 @@ export interface NodeConfig extends Record<string, unknown> {
 	type: NodeTypeKey;
 	outputCount: number;
 	transitions: Transition[];
+
+	// Global settings
+	delay?: number;
+	timeout?: number;
+	voiceSettings?: VoiceSettings;
+	retryCount?: number;
+	errorMessage?: string;
 
 	// Conversation Node
 	prompt?: string;
@@ -53,6 +65,7 @@ interface FlowState {
 	nodes: FlowNode[];
 	edges: Edge[];
 	selectedNodeId: string | null;
+	isSidebarCollapsed: boolean;
 
 	// Actions
 	addNode: (nodeType: NodeTypeKey, position: { x: number; y: number }) => void;
@@ -70,6 +83,7 @@ interface FlowState {
 		transitionId: string,
 		updates: Partial<Transition>
 	) => void;
+	setSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 const createDefaultNodeData = (type: NodeTypeKey, id: string): NodeConfig => {
@@ -78,7 +92,16 @@ const createDefaultNodeData = (type: NodeTypeKey, id: string): NodeConfig => {
 		label: '',
 		type,
 		outputCount: 0,
-		transitions: []
+		transitions: [],
+		// Default global settings
+		delay: 0,
+		timeout: 30000,
+		voiceSettings: {
+			voice: 'alloy',
+			speed: 1.0
+		},
+		retryCount: 0,
+		errorMessage: ''
 	};
 
 	switch (type) {
@@ -156,35 +179,11 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 			data: {
 				...createDefaultNodeData('conversation', 'node-1')
 			}
-		},
-		{
-			id: 'end',
-			type: 'output',
-			position: { x: 700, y: 100 },
-			data: {
-				id: 'end',
-				label: 'End',
-				type: 'endCall' as NodeTypeKey,
-				outputCount: 0,
-				transitions: []
-			},
-			draggable: true,
-			deletable: false
 		}
 	],
-	edges: [
-		{
-			id: 'e-start-1',
-			source: 'start',
-			target: 'node-1'
-		},
-		{
-			id: 'e-1-end',
-			source: 'node-1',
-			target: 'end'
-		}
-	],
+	edges: [],
 	selectedNodeId: null,
+	isSidebarCollapsed: false,
 
 	addNode: (nodeType: NodeTypeKey, position: { x: number; y: number }) => {
 		const id = `node-${++nodeIdCounter}`;
@@ -306,5 +305,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 					: node
 			)
 		}));
+	},
+
+	setSidebarCollapsed: (collapsed: boolean) => {
+		set({ isSidebarCollapsed: collapsed });
 	}
 }));

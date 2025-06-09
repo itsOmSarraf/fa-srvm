@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps, useUpdateNodeInternals } from '@xyflow/react';
-import { NodeConfig } from '@/stores/flowStore';
+import { NodeConfig, useFlowStore } from '@/stores/flowStore';
 import { LucideIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface ColorTheme {
     primary: string;
@@ -28,6 +30,35 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
 }) => {
     const nodeData = data as NodeConfig;
     const updateNodeInternals = useUpdateNodeInternals();
+    const { updateNode } = useFlowStore();
+
+    // State for label editing
+    const [isEditingLabel, setIsEditingLabel] = useState(false);
+    const [tempLabel, setTempLabel] = useState(nodeData.label);
+
+    // Label editing handlers
+    const handleLabelSave = useCallback(() => {
+        updateNode(id, { label: tempLabel });
+        setIsEditingLabel(false);
+    }, [id, tempLabel, updateNode]);
+
+    const handleLabelCancel = useCallback(() => {
+        setTempLabel(nodeData.label);
+        setIsEditingLabel(false);
+    }, [nodeData.label]);
+
+    const handleLabelKeyPress = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleLabelSave();
+        } else if (e.key === 'Escape') {
+            handleLabelCancel();
+        }
+    }, [handleLabelSave, handleLabelCancel]);
+
+    // Update temp label when node data changes
+    useEffect(() => {
+        setTempLabel(nodeData.label);
+    }, [nodeData.label]);
 
     useEffect(() => {
         updateNodeInternals(id);
@@ -117,7 +148,62 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
             {/* Header */}
             <div className={`flex items-center gap-2 p-3 ${colorTheme.background} ${colorTheme.border.replace('border-', 'border-b-')}`}>
                 <Icon className={`h-4 w-4 ${colorTheme.text}`} />
-                <span className={`font-medium ${colorTheme.text} flex-1`}>{nodeData.label}</span>
+                <div className="flex-1 flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                        {isEditingLabel ? (
+                            <Input
+                                value={tempLabel}
+                                onChange={(e) => setTempLabel(e.target.value)}
+                                onKeyDown={handleLabelKeyPress}
+                                autoFocus
+                                className="nodrag h-7 p-1 text-sm border-gray-300 focus-visible:ring-1 focus-visible:ring-blue-500"
+                            />
+                        ) : (
+                            <span
+                                className={`font-medium ${colorTheme.text} cursor-pointer hover:text-blue-600 truncate block`}
+                                onDoubleClick={() => setIsEditingLabel(true)}
+                                title="Double-click to edit"
+                            >
+                                {nodeData.label}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1 ml-2">
+                        {!isEditingLabel && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsEditingLabel(true)}
+                                className="nodrag h-6 w-6 p-0 hover:bg-gray-100"
+                                title="Edit label"
+                            >
+                                ✏️
+                            </Button>
+                        )}
+                        {isEditingLabel && (
+                            <>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={handleLabelSave}
+                                    className="nodrag h-6 w-6 p-0 bg-green-600 hover:bg-green-700 text-white"
+                                    title="Save"
+                                >
+                                    ✓
+                                </Button>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={handleLabelCancel}
+                                    className="nodrag h-6 w-6 p-0 bg-red-600 hover:bg-red-700 text-white"
+                                    title="Cancel"
+                                >
+                                    ✕
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* Content */}
