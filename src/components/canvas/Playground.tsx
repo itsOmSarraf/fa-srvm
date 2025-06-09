@@ -94,6 +94,12 @@ export const Playground = () => {
 
     // Only sync node changes that affect positioning/UI back to store
     React.useEffect(() => {
+        // Don't sync back if we have fewer nodes (likely a deletion)
+        if (flowNodes.length < nodes.length) {
+            console.log('Skipping sync - node deletion detected');
+            return;
+        }
+
         // Only update store if there are actual position/UI changes
         const hasPositionChanges = flowNodes.some((flowNode, index) => {
             const storeNode = nodes[index];
@@ -121,6 +127,26 @@ export const Playground = () => {
     const onPaneClick = useCallback(() => {
         selectNode(null);
     }, [selectNode]);
+
+    // CRITICAL: Handle keyboard deletion manually to ensure it goes through the store
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+        if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeId) {
+            event.preventDefault();
+
+            // Don't delete protected nodes
+            if (selectedNodeId !== 'start' && selectedNodeId !== 'end') {
+                // Use the store's deleteNode function to ensure persistence
+                const { deleteNode } = useFlowStore.getState();
+                deleteNode(selectedNodeId);
+            }
+        }
+    }, [selectedNodeId]);
+
+    // Add keyboard event listener for delete operations
+    React.useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
 
     // Handle drag and drop for creating new nodes
     const onDragOver = useCallback((event: React.DragEvent) => {
@@ -166,7 +192,6 @@ export const Playground = () => {
                         maxZoom: 0.7,
                         padding: 0.1
                     }}
-                    deleteKeyCode={['Backspace', 'Delete']}
                     multiSelectionKeyCode={['Meta', 'Ctrl']}
                     onPaneClick={onPaneClick}
                 >

@@ -127,7 +127,9 @@ export const NodeCreationToolbar: React.FC = () => {
                 event.target instanceof HTMLTextAreaElement ||
                 event.ctrlKey ||
                 event.metaKey ||
-                event.altKey
+                event.altKey ||
+                event.key === 'Delete' ||
+                event.key === 'Backspace'
             ) {
                 return;
             }

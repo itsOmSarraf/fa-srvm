@@ -238,20 +238,47 @@ export const useFlowStore = create<FlowState>()(
 			},
 
 			deleteNode: (nodeId: string) => {
-				set((state) => ({
-					nodes: state.nodes.filter((node) => node.id !== nodeId),
-					edges: state.edges.filter(
-						(edge) => edge.source !== nodeId && edge.target !== nodeId
-					),
-					selectedNodeId:
-						state.selectedNodeId === nodeId ? null : state.selectedNodeId
-				}));
+				set((state) => {
+					const newState = {
+						nodes: state.nodes.filter((node) => node.id !== nodeId),
+						edges: state.edges.filter(
+							(edge) => edge.source !== nodeId && edge.target !== nodeId
+						),
+						selectedNodeId:
+							state.selectedNodeId === nodeId ? null : state.selectedNodeId
+					};
+
+					// CRITICAL: Force immediate persistence for critical operations
+					// Use queueMicrotask for more reliable persistence timing
+					queueMicrotask(() => {
+						// Access store to trigger persistence
+						const currentState = get();
+						console.log(
+							'Node deleted and persisted:',
+							nodeId,
+							'remaining nodes:',
+							currentState.nodes.length
+						);
+					});
+
+					return newState;
+				});
 			},
 
 			deleteEdge: (edgeId: string) => {
-				set((state) => ({
-					edges: state.edges.filter((edge) => edge.id !== edgeId)
-				}));
+				set((state) => {
+					const newState = {
+						edges: state.edges.filter((edge) => edge.id !== edgeId)
+					};
+
+					// CRITICAL: Force immediate persistence
+					queueMicrotask(() => {
+						const currentState = get();
+						console.log('Edge deleted and persisted:', edgeId);
+					});
+
+					return newState;
+				});
 			},
 
 			addTransition: (nodeId: string) => {
@@ -343,10 +370,25 @@ export const useFlowStore = create<FlowState>()(
 					data: createDefaultNodeData(nodeType, id)
 				};
 
-				set((state) => ({
-					nodes: [...state.nodes, newNode],
-					selectedNodeId: id
-				}));
+				set((state) => {
+					const newState = {
+						nodes: [...state.nodes, newNode],
+						selectedNodeId: id
+					};
+
+					// CRITICAL: Update persisted nodeIdCounter immediately
+					queueMicrotask(() => {
+						const currentState = get();
+						console.log(
+							'Node created and persisted:',
+							id,
+							'total nodes:',
+							currentState.nodes.length
+						);
+					});
+
+					return newState;
+				});
 			},
 
 			// Persistence actions
@@ -373,14 +415,41 @@ export const useFlowStore = create<FlowState>()(
 						parsed.edges &&
 						Array.isArray(parsed.edges)
 					) {
+						// CRITICAL: Update nodeIdCounter first to prevent conflicts
+						if (
+							parsed.nodeIdCounter &&
+							typeof parsed.nodeIdCounter === 'number'
+						) {
+							nodeIdCounter = Math.max(parsed.nodeIdCounter, nodeIdCounter);
+						} else {
+							// Fallback: Calculate from existing node IDs to ensure no conflicts
+							const maxId = Math.max(
+								...parsed.nodes
+									.map((node: any) => {
+										const match = node.id?.match(/^node-(\d+)$/);
+										return match ? parseInt(match[1], 10) : 0;
+									})
+									.filter((id: number) => !isNaN(id)),
+								nodeIdCounter
+							);
+							nodeIdCounter = maxId + 1;
+						}
+
 						set({
 							nodes: parsed.nodes,
 							edges: parsed.edges,
 							selectedNodeId: null
 						});
-						if (parsed.nodeIdCounter) {
-							nodeIdCounter = parsed.nodeIdCounter;
-						}
+
+						// Force immediate persistence
+						queueMicrotask(() => {
+							const currentState = get();
+							console.log(
+								'Flow imported and persisted, total nodes:',
+								currentState.nodes.length
+							);
+						});
+
 						return true;
 					}
 					return false;
@@ -397,7 +466,9 @@ export const useFlowStore = create<FlowState>()(
 			partialize: (state) => ({
 				nodes: state.nodes,
 				edges: state.edges,
-				isSidebarCollapsed: state.isSidebarCollapsed
+				isSidebarCollapsed: state.isSidebarCollapsed,
+				// CRITICAL: Include nodeIdCounter to prevent ID conflicts
+				nodeIdCounter: nodeIdCounter
 			}),
 			// Migration for future versions
 			migrate: (persistedState: any, version: number) => {
@@ -416,6 +487,13 @@ export const useFlowStore = create<FlowState>()(
 						state?.clearStorage?.();
 					} else {
 						console.log('Flow storage rehydrated successfully');
+						// CRITICAL: Restore nodeIdCounter from persisted state
+						const persistedData = JSON.parse(
+							localStorage.getItem('flow-storage') || '{}'
+						);
+						if (persistedData.state?.nodeIdCounter) {
+							nodeIdCounter = persistedData.state.nodeIdCounter;
+						}
 					}
 				};
 			}

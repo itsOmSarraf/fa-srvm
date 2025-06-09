@@ -21,7 +21,9 @@ export const useKeyboardShortcuts = () => {
 				event.target instanceof HTMLTextAreaElement ||
 				event.ctrlKey ||
 				event.metaKey ||
-				event.altKey
+				event.altKey ||
+				event.key === 'Delete' ||
+				event.key === 'Backspace'
 			) {
 				return;
 			}
