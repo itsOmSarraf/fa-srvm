@@ -30,6 +30,7 @@ export const CustomEdge: React.FC<EdgeProps> = ({
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
         deleteEdge(id);
     };
 
@@ -42,6 +43,10 @@ export const CustomEdge: React.FC<EdgeProps> = ({
                 strokeWidth={2}
                 stroke={selected ? '#ff6b6b' : '#b1b1b7'}
                 fill="none"
+                style={{
+                    pointerEvents: 'none', // Disable clicking on the edge path
+                    cursor: 'default'
+                }}
             />
             <EdgeLabelRenderer>
                 <div
@@ -54,11 +59,15 @@ export const CustomEdge: React.FC<EdgeProps> = ({
                     }}
                     className="nodrag nopan"
                 >
-                    <div className="group relative cursor-pointer">
-                        {/* Invisible hover area to make interaction easier */}
-                        <div className="absolute inset-0 -m-4 rounded-full cursor-pointer" />
+                    <div className="group relative">
+                        {/* Larger invisible hover area to make interaction easier */}
+                        <div
+                            className="absolute inset-0 -m-6 rounded-full"
+                            style={{ pointerEvents: 'all' }}
+                        />
                         <button
                             onClick={handleDelete}
+                            onMouseDown={(e) => e.stopPropagation()}
                             className={`
                                 ${selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} 
                                 transition-all duration-200 
@@ -70,6 +79,8 @@ export const CustomEdge: React.FC<EdgeProps> = ({
                                 hover:scale-110
                                 focus:outline-none focus:ring-2 focus:ring-red-300
                                 cursor-pointer
+                                relative
+                                z-20
                             `}
                             title="Delete edge"
                         >

@@ -23,7 +23,8 @@ import '@xyflow/react/dist/style.css';
 const edgeStyles = `
   .react-flow__edge-path {
     stroke-width: 2px;
-    cursor: pointer;
+    cursor: default;
+    pointer-events: none;
   }
   
   .react-flow__edge.selected .react-flow__edge-path {
@@ -34,11 +35,22 @@ const edgeStyles = `
     stroke-width: 3px;
   }
 
+  /* Disable edge selection and clicking */
+  .react-flow__edge {
+    pointer-events: none;
+  }
+
+  /* Re-enable pointer events only for edge labels (delete buttons) */
+  .react-flow__edge .react-flow__edge-labels {
+    pointer-events: all;
+  }
+
   /* Ensure delete button has proper cursor and higher z-index */
   .react-flow__edge button {
     cursor: pointer !important;
     position: relative;
-    z-index: 10;
+    z-index: 20;
+    pointer-events: all;
   }
 
   /* Make input/output node handles match BaseNode handle size */
@@ -71,7 +83,7 @@ export const Playground = () => {
     // Enable keyboard shortcuts for node creation
     useKeyboardShortcuts();
 
-    // Sync Zustand state with ReactFlow state
+    // Sync Zustand state with ReactFlow state - ONE WAY ONLY to avoid circular updates
     React.useEffect(() => {
         setFlowNodes(nodes);
     }, [nodes, setFlowNodes]);
@@ -80,9 +92,22 @@ export const Playground = () => {
         setFlowEdges(edges);
     }, [edges, setFlowEdges]);
 
+    // Only sync node changes that affect positioning/UI back to store
     React.useEffect(() => {
-        setNodes(flowNodes);
-    }, [flowNodes, setNodes]);
+        // Only update store if there are actual position/UI changes
+        const hasPositionChanges = flowNodes.some((flowNode, index) => {
+            const storeNode = nodes[index];
+            return storeNode && (
+                flowNode.position.x !== storeNode.position.x ||
+                flowNode.position.y !== storeNode.position.y
+            );
+        });
+
+        if (hasPositionChanges && flowNodes.length === nodes.length) {
+            // Only update positions, don't replace entire nodes array
+            setNodes(flowNodes);
+        }
+    }, [flowNodes, nodes, setNodes]);
 
     React.useEffect(() => {
         setEdges(flowEdges);

@@ -127,7 +127,8 @@ export const createDefaultNodeData = (
 	}
 };
 
-let nodeIdCounter = 1;
+// Use a global counter for unique node IDs
+let nodeIdCounter = 2; // Start at 2 since node-1 already exists in default state
 
 // Export function to get next node ID
 export const getNextNodeId = () => `node-${++nodeIdCounter}`;
@@ -327,7 +328,14 @@ export const useFlowStore = create<FlowState>()(
 				nodeType: NodeTypeKey,
 				position: { x: number; y: number }
 			) => {
-				const id = getNextNodeId();
+				const state = get();
+				let id = getNextNodeId();
+
+				// Ensure ID is unique - keep generating until we get a unique one
+				while (state.nodes.some((node) => node.id === id)) {
+					id = getNextNodeId();
+				}
+
 				const newNode: FlowNode = {
 					id,
 					type: nodeType,
