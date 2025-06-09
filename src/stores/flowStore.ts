@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { type Node, type Edge, type Connection, addEdge } from '@xyflow/react';
 
 export type NodeTypeKey =
@@ -84,7 +85,48 @@ interface FlowState {
 		updates: Partial<Transition>
 	) => void;
 	setSidebarCollapsed: (collapsed: boolean) => void;
+	// Persistence actions
+	clearStorage: () => void;
+	exportFlow: () => string;
+	importFlow: (flowData: string) => boolean;
 }
+
+// Default flow state for initialization and reset
+const getDefaultFlowState = () => ({
+	nodes: [
+		{
+			id: 'start',
+			type: 'input',
+			position: { x: 100, y: 100 },
+			data: {
+				id: 'start',
+				label: 'Start',
+				type: 'conversation' as NodeTypeKey,
+				outputCount: 1,
+				transitions: [
+					{
+						id: 'start-transition',
+						label: 'Begin',
+						condition: ''
+					}
+				]
+			},
+			draggable: true,
+			deletable: false
+		},
+		{
+			id: 'node-1',
+			type: 'conversation',
+			position: { x: 400, y: 100 },
+			data: {
+				...createDefaultNodeData('conversation', 'node-1')
+			}
+		}
+	] as FlowNode[],
+	edges: [] as Edge[],
+	selectedNodeId: null as string | null,
+	isSidebarCollapsed: false
+});
 
 const createDefaultNodeData = (type: NodeTypeKey, id: string): NodeConfig => {
 	const baseData: NodeConfig = {
@@ -149,166 +191,211 @@ const createDefaultNodeData = (type: NodeTypeKey, id: string): NodeConfig => {
 
 let nodeIdCounter = 1;
 
-export const useFlowStore = create<FlowState>((set, get) => ({
-	// Initial state with start and end points plus one sample node
-	nodes: [
-		{
-			id: 'start',
-			type: 'input',
-			position: { x: 100, y: 100 },
-			data: {
-				id: 'start',
-				label: 'Start',
-				type: 'conversation' as NodeTypeKey,
-				outputCount: 1,
-				transitions: [
-					{
-						id: 'start-transition',
-						label: 'Begin',
-						condition: ''
-					}
-				]
+export const useFlowStore = create<FlowState>()(
+	persist(
+		(set, get) => ({
+			// Initial state using default values
+			...getDefaultFlowState(),
+
+			addNode: (nodeType: NodeTypeKey, position: { x: number; y: number }) => {
+				const id = `node-${++nodeIdCounter}`;
+				const newNode: FlowNode = {
+					id,
+					type: nodeType,
+					position,
+					data: createDefaultNodeData(nodeType, id)
+				};
+
+				set((state) => ({
+					nodes: [...state.nodes, newNode],
+					selectedNodeId: id
+				}));
 			},
-			draggable: true,
-			deletable: false
-		},
+
+			updateNode: (nodeId: string, data: Partial<NodeConfig>) => {
+				set((state) => ({
+					nodes: state.nodes.map((node) =>
+						node.id === nodeId
+							? { ...node, data: { ...node.data, ...data } }
+							: node
+					)
+				}));
+			},
+
+			selectNode: (nodeId: string | null) => {
+				set({ selectedNodeId: nodeId });
+			},
+
+			setNodes: (nodes: FlowNode[]) => {
+				set({ nodes });
+			},
+
+			setEdges: (edges: Edge[]) => {
+				set({ edges });
+			},
+
+			onConnect: (connection: Connection) => {
+				set((state) => ({
+					edges: addEdge(connection, state.edges)
+				}));
+			},
+
+			deleteNode: (nodeId: string) => {
+				set((state) => ({
+					nodes: state.nodes.filter((node) => node.id !== nodeId),
+					edges: state.edges.filter(
+						(edge) => edge.source !== nodeId && edge.target !== nodeId
+					),
+					selectedNodeId:
+						state.selectedNodeId === nodeId ? null : state.selectedNodeId
+				}));
+			},
+
+			deleteEdge: (edgeId: string) => {
+				set((state) => ({
+					edges: state.edges.filter((edge) => edge.id !== edgeId)
+				}));
+			},
+
+			addTransition: (nodeId: string) => {
+				set((state) => ({
+					nodes: state.nodes.map((node) =>
+						node.id === nodeId
+							? {
+									...node,
+									data: {
+										...node.data,
+										outputCount: node.data.outputCount + 1,
+										transitions: [
+											...node.data.transitions,
+											{
+												id: `transition-${Date.now()}`,
+												label: `Transition ${node.data.transitions.length + 1}`,
+												condition: ''
+											}
+										]
+									}
+							  }
+							: node
+					)
+				}));
+			},
+
+			removeTransition: (nodeId: string, transitionId: string) => {
+				set((state) => ({
+					nodes: state.nodes.map((node) =>
+						node.id === nodeId
+							? {
+									...node,
+									data: {
+										...node.data,
+										outputCount: Math.max(0, node.data.outputCount - 1),
+										transitions: node.data.transitions.filter(
+											(t) => t.id !== transitionId
+										)
+									}
+							  }
+							: node
+					)
+				}));
+			},
+
+			updateTransition: (
+				nodeId: string,
+				transitionId: string,
+				updates: Partial<Transition>
+			) => {
+				set((state) => ({
+					nodes: state.nodes.map((node) =>
+						node.id === nodeId
+							? {
+									...node,
+									data: {
+										...node.data,
+										transitions: node.data.transitions.map((t) =>
+											t.id === transitionId ? { ...t, ...updates } : t
+										)
+									}
+							  }
+							: node
+					)
+				}));
+			},
+
+			setSidebarCollapsed: (collapsed: boolean) => {
+				set({ isSidebarCollapsed: collapsed });
+			},
+
+			// Persistence actions
+			clearStorage: () => {
+				set(getDefaultFlowState());
+			},
+
+			exportFlow: () => {
+				const state = get();
+				return JSON.stringify({
+					nodes: state.nodes,
+					edges: state.edges,
+					nodeIdCounter,
+					timestamp: Date.now()
+				});
+			},
+
+			importFlow: (flowData: string) => {
+				try {
+					const parsed = JSON.parse(flowData);
+					if (
+						parsed.nodes &&
+						Array.isArray(parsed.nodes) &&
+						parsed.edges &&
+						Array.isArray(parsed.edges)
+					) {
+						set({
+							nodes: parsed.nodes,
+							edges: parsed.edges,
+							selectedNodeId: null
+						});
+						if (parsed.nodeIdCounter) {
+							nodeIdCounter = parsed.nodeIdCounter;
+						}
+						return true;
+					}
+					return false;
+				} catch {
+					return false;
+				}
+			}
+		}),
 		{
-			id: 'node-1',
-			type: 'conversation',
-			position: { x: 400, y: 100 },
-			data: {
-				...createDefaultNodeData('conversation', 'node-1')
+			name: 'flow-storage', // unique name for localStorage key
+			storage: createJSONStorage(() => localStorage),
+			version: 1,
+			// Only persist essential data, exclude selectedNodeId and UI state
+			partialize: (state) => ({
+				nodes: state.nodes,
+				edges: state.edges,
+				isSidebarCollapsed: state.isSidebarCollapsed
+			}),
+			// Migration for future versions
+			migrate: (persistedState: any, version: number) => {
+				if (version === 0) {
+					// Handle migration from v0 to v1 if needed
+					return persistedState;
+				}
+				return persistedState;
+			},
+			// Handle storage errors gracefully
+			onRehydrateStorage: (state) => {
+				return (state, error) => {
+					if (error) {
+						console.warn('Failed to rehydrate flow storage:', error);
+						// Reset to default state on error
+						state?.clearStorage?.();
+					} else {
+						console.log('Flow storage rehydrated successfully');
+					}
+				};
 			}
 		}
-	],
-	edges: [],
-	selectedNodeId: null,
-	isSidebarCollapsed: false,
-
-	addNode: (nodeType: NodeTypeKey, position: { x: number; y: number }) => {
-		const id = `node-${++nodeIdCounter}`;
-		const newNode: FlowNode = {
-			id,
-			type: nodeType,
-			position,
-			data: createDefaultNodeData(nodeType, id)
-		};
-
-		set((state) => ({
-			nodes: [...state.nodes, newNode],
-			selectedNodeId: id
-		}));
-	},
-
-	updateNode: (nodeId: string, data: Partial<NodeConfig>) => {
-		set((state) => ({
-			nodes: state.nodes.map((node) =>
-				node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
-			)
-		}));
-	},
-
-	selectNode: (nodeId: string | null) => {
-		set({ selectedNodeId: nodeId });
-	},
-
-	setNodes: (nodes: FlowNode[]) => {
-		set({ nodes });
-	},
-
-	setEdges: (edges: Edge[]) => {
-		set({ edges });
-	},
-
-	onConnect: (connection: Connection) => {
-		set((state) => ({
-			edges: addEdge(connection, state.edges)
-		}));
-	},
-
-	deleteNode: (nodeId: string) => {
-		set((state) => ({
-			nodes: state.nodes.filter((node) => node.id !== nodeId),
-			edges: state.edges.filter(
-				(edge) => edge.source !== nodeId && edge.target !== nodeId
-			),
-			selectedNodeId:
-				state.selectedNodeId === nodeId ? null : state.selectedNodeId
-		}));
-	},
-
-	deleteEdge: (edgeId: string) => {
-		set((state) => ({
-			edges: state.edges.filter((edge) => edge.id !== edgeId)
-		}));
-	},
-
-	addTransition: (nodeId: string) => {
-		set((state) => ({
-			nodes: state.nodes.map((node) =>
-				node.id === nodeId
-					? {
-							...node,
-							data: {
-								...node.data,
-								outputCount: node.data.outputCount + 1,
-								transitions: [
-									...node.data.transitions,
-									{
-										id: `transition-${Date.now()}`,
-										label: `Transition ${node.data.transitions.length + 1}`,
-										condition: ''
-									}
-								]
-							}
-					  }
-					: node
-			)
-		}));
-	},
-
-	removeTransition: (nodeId: string, transitionId: string) => {
-		set((state) => ({
-			nodes: state.nodes.map((node) =>
-				node.id === nodeId
-					? {
-							...node,
-							data: {
-								...node.data,
-								outputCount: Math.max(0, node.data.outputCount - 1),
-								transitions: node.data.transitions.filter(
-									(t) => t.id !== transitionId
-								)
-							}
-					  }
-					: node
-			)
-		}));
-	},
-
-	updateTransition: (
-		nodeId: string,
-		transitionId: string,
-		updates: Partial<Transition>
-	) => {
-		set((state) => ({
-			nodes: state.nodes.map((node) =>
-				node.id === nodeId
-					? {
-							...node,
-							data: {
-								...node.data,
-								transitions: node.data.transitions.map((t) =>
-									t.id === transitionId ? { ...t, ...updates } : t
-								)
-							}
-					  }
-					: node
-			)
-		}));
-	},
-
-	setSidebarCollapsed: (collapsed: boolean) => {
-		set({ isSidebarCollapsed: collapsed });
-	}
-}));
+	)
+);

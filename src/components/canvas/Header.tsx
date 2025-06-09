@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronLeft, Pencil, Copy, Clock } from 'lucide-react';
 import { headerData } from '@/lib/canvas-data';
 import { motion } from 'framer-motion';
+import { PersistenceStatus, PersistenceControls } from './PersistenceControls';
 
 export function Header() {
     return (
@@ -76,9 +77,14 @@ export function Header() {
                             <span>Estimated Latency: {headerData.latency}</span>
                             <Clock className="ml-1 h-3 w-3" />
                         </div>
-                        <span>Auto saved at {headerData.autoSaveTime}</span>
+                        <PersistenceStatus />
                     </motion.div>
                 </motion.div>
+
+                {/* Add persistence controls to the right side */}
+                <div className="ml-auto">
+                    <PersistenceControls />
+                </div>
             </div>
         </motion.header>
     );
