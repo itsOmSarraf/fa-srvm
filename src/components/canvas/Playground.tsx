@@ -140,7 +140,7 @@ export const Playground = () => {
                     multiSelectionKeyCode={['Meta', 'Ctrl']}
                     onPaneClick={onPaneClick}
                 >
-                    <Controls />
+                    {/* <Controls /> */}
                     <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
                     <NodeCreationToolbar />
                 </ReactFlow>
