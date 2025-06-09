@@ -211,6 +211,6 @@ export const Playground = () => {
                     <NodeCreationToolbar />
                 </ReactFlow>
             </div>
-        </div>
+        </div >
     );
 };

@@ -32,7 +32,7 @@ export function AIWorkflowChat() {
         selectedNodeId
     }), [nodes, edges, selectedNodeId]);
 
-    const { _createNode, updateNode, onConnect, addTransition } = useFlowStore();
+    const { _createNode, updateNode } = useFlowStore();
 
     const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
         api: '/api/chat',

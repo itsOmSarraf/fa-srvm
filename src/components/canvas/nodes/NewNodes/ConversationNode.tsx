@@ -8,7 +8,7 @@ import { nodeThemes } from './nodeThemes';
 export const ConversationNode: React.FC<NodeProps> = (props) => {
     const renderContent = (nodeData: NodeConfig) => (
         <div className="text-sm text-gray-600 mb-2">
-            {nodeData.prompt?.substring(0, 50) || 'No prompt set'}...
+            {nodeData.prompt?.substring(0, 50) || 'No prompt set'}
         </div>
     );
 

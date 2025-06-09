@@ -3,6 +3,7 @@ import { useFlowStore, NodeTypeKey } from "@/stores/flowStore"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useSmartNodePlacement } from "@/hooks/useSmartNodePlacement"
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 
 import {
     Sidebar,
@@ -23,41 +24,47 @@ const items: Array<{
     icon: React.ComponentType<any>;
     color: string;
     description: string;
+    shortcut: string;
 }> = [
         {
             title: "Conversation",
             nodeType: "conversation",
             icon: Hash,
             color: "#8B5CF6", // Purple
-            description: "Handle voice interactions and responses"
+            description: "Handle voice interactions and responses",
+            shortcut: "C"
         },
         {
             title: "Function",
             nodeType: "function",
             icon: Cog,
             color: "#3B82F6", // Blue
-            description: "Execute custom code or API calls"
+            description: "Execute custom code or API calls",
+            shortcut: "F"
         },
         {
             title: "Call Transfer",
             nodeType: "callTransfer",
             icon: Phone,
             color: "#10B981", // Green
-            description: "Transfer call to another number"
+            description: "Transfer call to another number",
+            shortcut: "T"
         },
         {
             title: "Press Digit",
             nodeType: "pressDigit",
             icon: Grid3X3,
             color: "#F59E0B", // Orange
-            description: "Handle keypad input from caller"
+            description: "Handle keypad input from caller",
+            shortcut: "D"
         },
         {
             title: "End Call",
             nodeType: "endCall",
             icon: Square,
             color: "#EF4444", // Red
-            description: "Terminate the call"
+            description: "Terminate the call",
+            shortcut: "E"
         },
     ]
 
@@ -65,6 +72,7 @@ export function SidebarLeft() {
     const isSidebarCollapsed = useFlowStore((state) => state.isSidebarCollapsed);
     const setSidebarCollapsed = useFlowStore((state) => state.setSidebarCollapsed);
     const { addNodeSmart } = useSmartNodePlacement();
+    useKeyboardShortcuts(); // Enable keyboard shortcuts
 
     const handleAddNode = (nodeType: NodeTypeKey) => {
         addNodeSmart(nodeType);
@@ -159,10 +167,11 @@ export function SidebarLeft() {
                                                     >
                                                         <Button
                                                             variant="ghost"
-                                                            className="w-full justify-start p-3 h-auto border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:shadow-sm"
+                                                            className="w-full justify-start p-3 h-auto border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 hover:shadow-sm relative"
                                                             onClick={() => handleAddNode(item.nodeType)}
                                                             draggable
                                                             onDragStart={(e) => handleDragStart(e, item.nodeType)}
+                                                            title={`${item.title} (Press ${item.shortcut})`}
                                                         >
                                                             <div className="flex items-start space-x-3 w-full">
                                                                 <motion.div
@@ -176,8 +185,13 @@ export function SidebarLeft() {
                                                                     />
                                                                 </motion.div>
                                                                 <div className="flex-1 min-w-0 text-left">
-                                                                    <div className="font-medium text-gray-900 text-sm">
-                                                                        {item.title}
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="font-medium text-gray-900 text-sm">
+                                                                            {item.title}
+                                                                        </div>
+                                                                        <kbd className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-mono border border-gray-200">
+                                                                            {item.shortcut}
+                                                                        </kbd>
                                                                     </div>
                                                                     <div className="text-xs text-gray-500 mt-1 leading-tight break-words text-wrap">
                                                                         {item.description}
@@ -199,10 +213,11 @@ export function SidebarLeft() {
                                                 className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200"
                                             >
                                                 <div className="text-xs text-blue-700 font-medium mb-1">
-                                                    💡 Pro Tip
+                                                    💡 Pro Tips
                                                 </div>
-                                                <div className="text-xs text-blue-600">
-                                                    Click to add at center or drag to position nodes precisely
+                                                <div className="text-xs text-blue-600 space-y-1">
+                                                    <div>• Click to add at center or drag to position nodes precisely</div>
+                                                    <div>• Use keyboard shortcuts (C, F, T, D, E) for quick node creation</div>
                                                 </div>
                                             </motion.div>
                                         </SidebarGroupContent>

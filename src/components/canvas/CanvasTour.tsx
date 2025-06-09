@@ -115,7 +115,6 @@ interface CanvasTourProps {
 
 export function CanvasTour({ autoStart = false }: CanvasTourProps) {
     const [isRunning, setIsRunning] = useState(false);
-    const [stepIndex, setStepIndex] = useState(0);
     const [showStartButton, setShowStartButton] = useState(false);
 
     const { isSidebarCollapsed, setSidebarCollapsed } = useFlowStore();
@@ -137,28 +136,21 @@ export function CanvasTour({ autoStart = false }: CanvasTourProps) {
 
         if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
             setIsRunning(false);
-            setStepIndex(0);
             setShowStartButton(false);
             // Mark tour as completed
             localStorage.setItem('canvas-tour-completed', 'true');
-        } else if (type === EVENTS.STEP_AFTER) {
-            setStepIndex(index + 1);
         } else if (type === EVENTS.TARGET_NOT_FOUND) {
             console.warn(`Tour target not found for step ${index}`);
-            // Skip to next step if target not found
-            setStepIndex(index + 1);
         }
     }, []);
 
     const startTour = useCallback(() => {
         setIsRunning(true);
-        setStepIndex(0);
         setShowStartButton(false);
     }, []);
 
     const stopTour = useCallback(() => {
         setIsRunning(false);
-        setStepIndex(0);
         setShowStartButton(false);
     }, []);
 
@@ -232,7 +224,6 @@ export function CanvasTour({ autoStart = false }: CanvasTourProps) {
             <Joyride
                 steps={createTourSteps(isSidebarCollapsed)}
                 run={isRunning}
-                stepIndex={stepIndex}
                 callback={handleJoyrideCallback}
                 continuous
                 showProgress

@@ -5,6 +5,7 @@ import { useFlowStore, NodeTypeKey } from '@/stores/flowStore';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSmartNodePlacement } from '@/hooks/useSmartNodePlacement';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 const nodeTypes = [
     {
@@ -48,10 +49,10 @@ export const NodeCreationToolbar: React.FC = () => {
     const { isSidebarCollapsed, selectedNodeId } = useFlowStore();
     const { addNodeSmart } = useSmartNodePlacement();
     const { fitView } = useReactFlow();
+    const { keyboardHintVisible } = useKeyboardShortcuts();
     const [position, setPosition] = useState({ x: 0, y: 0 }); // Track both X and Y now
     const [isDragging, setIsDragging] = useState(false);
     const [showToolbar, setShowToolbar] = useState(false);
-    const [keyboardHintVisible, setKeyboardHintVisible] = useState(false);
     const [isInitialShow, setIsInitialShow] = useState(true); // Track if this is the first time showing
     const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number }>({
         startX: 0, startY: 0, startPosX: 0, startPosY: 0
@@ -119,38 +120,7 @@ export const NodeCreationToolbar: React.FC = () => {
         }
     }, [selectedNodeId, showToolbar, isInitialShow, adjustPositionToVisibleArea]);
 
-    // Listen for keyboard shortcuts to temporarily show toolbar
-    useEffect(() => {
-        const handleKeyPress = (event: KeyboardEvent) => {
-            if (
-                event.target instanceof HTMLInputElement ||
-                event.target instanceof HTMLTextAreaElement ||
-                event.ctrlKey ||
-                event.metaKey ||
-                event.altKey ||
-                event.key === 'Delete' ||
-                event.key === 'Backspace'
-            ) {
-                return;
-            }
 
-            const keyToNodeType: Record<string, NodeTypeKey> = {
-                c: 'conversation',
-                f: 'function',
-                t: 'callTransfer',
-                d: 'pressDigit',
-                e: 'endCall'
-            };
-
-            if (keyToNodeType[event.key.toLowerCase()]) {
-                setKeyboardHintVisible(true);
-                setTimeout(() => setKeyboardHintVisible(false), 2000);
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyPress);
-        return () => document.removeEventListener('keydown', handleKeyPress);
-    }, []);
 
     const handleQuickAdd = useCallback((nodeType: NodeTypeKey) => {
         addNodeSmart(nodeType);
@@ -316,26 +286,6 @@ export const NodeCreationToolbar: React.FC = () => {
                                     </span>
                                 </Button>
                             </motion.div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Keyboard Shortcut Hint */}
-            <AnimatePresence>
-                {keyboardHintVisible && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50"
-                    >
-                        <div className="bg-gray-900 text-white px-4 py-2 rounded-lg shadow-xl border border-gray-700 min-w-max">
-                            <div className="text-sm font-medium whitespace-nowrap">Keyboard Shortcuts Active</div>
-                            <div className="text-xs opacity-75 mt-1 whitespace-nowrap">
-                                Press <kbd className="bg-gray-700 px-1 rounded text-white">C</kbd>, <kbd className="bg-gray-700 px-1 rounded text-white">F</kbd>, <kbd className="bg-gray-700 px-1 rounded text-white">T</kbd>, <kbd className="bg-gray-700 px-1 rounded text-white">D</kbd>, or <kbd className="bg-gray-700 px-1 rounded text-white">E</kbd> to add nodes quickly
-                            </div>
                         </div>
                     </motion.div>
                 )}
