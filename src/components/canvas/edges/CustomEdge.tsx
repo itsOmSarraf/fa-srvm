@@ -50,12 +50,13 @@ export const CustomEdge: React.FC<EdgeProps> = ({
                         transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
                         fontSize: 12,
                         pointerEvents: 'all',
+                        zIndex: 10,
                     }}
                     className="nodrag nopan"
                 >
-                    <div className="group relative">
+                    <div className="group relative cursor-pointer">
                         {/* Invisible hover area to make interaction easier */}
-                        <div className="absolute inset-0 -m-4 rounded-full" />
+                        <div className="absolute inset-0 -m-4 rounded-full cursor-pointer" />
                         <button
                             onClick={handleDelete}
                             className={`
@@ -68,6 +69,7 @@ export const CustomEdge: React.FC<EdgeProps> = ({
                                 shadow-lg border-2 border-white
                                 hover:scale-110
                                 focus:outline-none focus:ring-2 focus:ring-red-300
+                                cursor-pointer
                             `}
                             title="Delete edge"
                         >

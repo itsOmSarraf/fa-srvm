@@ -220,7 +220,7 @@ export const NodeConfigPanel: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveTransition(transition.id)}
-                                className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                                className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-gray-400 hover:text-red-600 cursor-pointer"
                             >
                                 <Trash2 className="h-3 w-3" />
                             </Button>

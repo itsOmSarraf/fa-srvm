@@ -34,6 +34,13 @@ const edgeStyles = `
     stroke-width: 3px;
   }
 
+  /* Ensure delete button has proper cursor and higher z-index */
+  .react-flow__edge button {
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+  }
+
   /* Make input/output node handles match BaseNode handle size */
   .react-flow__node-input .react-flow__handle,
   .react-flow__node-output .react-flow__handle {
