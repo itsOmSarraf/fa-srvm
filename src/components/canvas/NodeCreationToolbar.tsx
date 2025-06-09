@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Hash, Cog, Phone, Grid3X3, Square, Plus, GripVertical } from 'lucide-react';
+import { Hash, Cog, Phone, Grid3X3, Square, Plus, GripVertical, Maximize2 } from 'lucide-react';
+import { useReactFlow } from '@xyflow/react';
 import { useFlowStore, NodeTypeKey } from '@/stores/flowStore';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,6 +47,7 @@ const nodeTypes = [
 export const NodeCreationToolbar: React.FC = () => {
     const { isSidebarCollapsed, selectedNodeId } = useFlowStore();
     const { addNodeSmart } = useSmartNodePlacement();
+    const { fitView } = useReactFlow();
     const [position, setPosition] = useState({ x: 0, y: 0 }); // Track both X and Y now
     const [isDragging, setIsDragging] = useState(false);
     const [showToolbar, setShowToolbar] = useState(false);
@@ -152,6 +154,14 @@ export const NodeCreationToolbar: React.FC = () => {
         addNodeSmart(nodeType);
     }, [addNodeSmart]);
 
+    const handleFitView = useCallback(() => {
+        fitView({
+            maxZoom: 0.7,
+            padding: 0.1,
+            duration: 500
+        });
+    }, [fitView]);
+
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
         dragRef.current = {
@@ -231,13 +241,13 @@ export const NodeCreationToolbar: React.FC = () => {
                     >
                         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-200/50 p-2 flex items-center gap-1">
                             <motion.div
-                                className="flex items-center cursor-grab active:cursor-grabbing px-2 py-1 rounded-lg hover:bg-gray-100/80 transition-colors"
+                                className="flex items-center cursor-grab active:cursor-grabbing px-2 py-1 rounded-lg transition-colors"
                                 onMouseDown={handleMouseDown}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <GripVertical className="h-3 w-3 text-gray-400" />
-                                <span className="text-xs font-medium text-gray-600 ml-1 hidden sm:block">Quick Add</span>
+                                {/* <span className="text-xs font-medium text-gray-600 ml-1 hidden sm:block">Quick Add</span> */}
                             </motion.div>
 
                             <div className="w-px h-6 bg-gray-200 mx-1"></div>
@@ -278,6 +288,31 @@ export const NodeCreationToolbar: React.FC = () => {
                                     </Button>
                                 </motion.div>
                             ))}
+
+                            {/* Separator */}
+                            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+                            {/* Fit View Control */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: nodeTypes.length * 0.03, type: "spring", stiffness: 500, damping: 30 }}
+                            >
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleFitView}
+                                    className="h-8 w-8 p-0 hover:bg-gray-100/80 relative group transition-all duration-200 hover:scale-110 rounded-lg"
+                                    title="Center and fit view"
+                                >
+                                    <Maximize2 className="h-4 w-4 text-gray-600 transition-transform group-hover:scale-110" />
+
+                                    {/* Tooltip */}
+                                    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs bg-blue-600 text-white rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                        Fit View
+                                    </span>
+                                </Button>
+                            </motion.div>
                         </div>
                     </motion.div>
                 )}
