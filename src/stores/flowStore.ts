@@ -195,7 +195,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 		};
 
 		set((state) => ({
-			nodes: [...state.nodes, newNode]
+			nodes: [...state.nodes, newNode],
+			selectedNodeId: id
 		}));
 	},
 

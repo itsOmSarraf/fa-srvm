@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Settings, ArrowRight, Clock, Volume2, Wrench } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const NodeConfigPanel: React.FC = () => {
     const {
@@ -25,19 +26,7 @@ export const NodeConfigPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'config' | 'global'>('config');
 
     if (!selectedNode || !selectedNodeId) {
-        return (
-            <div className="p-6 text-center">
-                <div className="max-w-sm mx-auto">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Settings className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Node Selected</h3>
-                    <p className="text-gray-500 text-sm">
-                        Select a node from the canvas to configure its settings, transitions, and global properties.
-                    </p>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     const handleUpdate = (field: keyof NodeConfig, value: any) => {
@@ -369,90 +358,155 @@ export const NodeConfigPanel: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex flex-col">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 30,
+                mass: 0.8
+            }}
+            className="h-full flex flex-col"
+        >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-white">
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="flex items-center justify-between p-4 border-b bg-white"
+            >
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                            {selectedNode.data.type}
-                        </Badge>
                         <span className="text-lg font-semibold text-gray-800">
                             {selectedNode.data.label}
                         </span>
                     </div>
                 </div>
                 {selectedNode.id !== 'start' && selectedNode.id !== 'end' && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDelete}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                     >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDelete}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </motion.div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Tab Navigation */}
-            <div className="flex border-b bg-gray-50">
-                <button
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex border-b bg-gray-50"
+            >
+                <motion.button
+                    whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('config')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'config'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'config'
                         ? 'border-blue-500 text-blue-600 bg-white'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Configuration
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                    whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('global')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'global'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'global'
                         ? 'border-blue-500 text-blue-600 bg-white'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Global Settings
-                </button>
-            </div>
+                </motion.button>
+            </motion.div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-                {activeTab === 'config' ? (
-                    <div className="space-y-6">
-                        {/* Basic Configuration */}
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm">Basic Configuration</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="label">Node Label</Label>
-                                    <Input
-                                        id="label"
-                                        value={selectedNode.data.label}
-                                        onChange={(e) => handleUpdate('label', e.target.value)}
-                                        placeholder="Enter node label..."
-                                    />
-                                </div>
-                                {renderConfigFields()}
-                            </CardContent>
-                        </Card>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 30
+                        }}
+                    >
+                        {activeTab === 'config' ? (
+                            <div className="space-y-6">
+                                {/* Basic Configuration */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                >
+                                    <Card>
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-sm">Basic Configuration</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="label">Node Label</Label>
+                                                <Input
+                                                    id="label"
+                                                    value={selectedNode.data.label}
+                                                    onChange={(e) => handleUpdate('label', e.target.value)}
+                                                    placeholder="Enter node label..."
+                                                    className="transition-all duration-200 focus:scale-[1.02]"
+                                                />
+                                            </div>
+                                            {renderConfigFields()}
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
 
-                        {/* Transitions */}
-                        {renderTransitionSection()}
-                    </div>
-                ) : (
-                    renderGlobalSettings()
-                )}
+                                {/* Transitions */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    {renderTransitionSection()}
+                                </motion.div>
+                            </div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                {renderGlobalSettings()}
+                            </motion.div>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t bg-gray-50">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="p-4 border-t bg-gray-50"
+            >
                 <div className="text-xs text-gray-500">
                     Node ID: {selectedNode.id} | Type: {selectedNode.data.type}
                 </div>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }; 

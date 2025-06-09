@@ -82,6 +82,11 @@ export const Playground = () => {
         selectNode(node.id);
     }, [selectNode]);
 
+    // Handle clicking on canvas background to deselect nodes
+    const onPaneClick = useCallback(() => {
+        selectNode(null);
+    }, [selectNode]);
+
     // Handle drag and drop for creating new nodes
     const onDragOver = useCallback((event: React.DragEvent) => {
         event.preventDefault();
@@ -111,9 +116,9 @@ export const Playground = () => {
     }));
 
     return (
-        <div className="w-full">
+        <div className="w-full h-full">
             <style>{edgeStyles}</style>
-            <div className="w-full h-[90%] overflow-y-hidden relative">
+            <div className="w-full" style={{ height: 'calc(100vh - 80px)' }}>
                 <ReactFlow
                     nodes={nodesWithSelection}
                     edges={flowEdges}
@@ -133,6 +138,7 @@ export const Playground = () => {
                     }}
                     deleteKeyCode={['Backspace', 'Delete']}
                     multiSelectionKeyCode={['Meta', 'Ctrl']}
+                    onPaneClick={onPaneClick}
                 >
                     <Controls />
                     <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
