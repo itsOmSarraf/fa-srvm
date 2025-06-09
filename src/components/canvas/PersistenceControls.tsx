@@ -6,19 +6,10 @@ import {
     Upload,
     Download,
     RotateCcw,
-    Info,
     CheckCircle2,
     AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from '@/components/ui/dialog';
 import {
     Tooltip,
     TooltipContent,
@@ -39,7 +30,6 @@ export function PersistenceControls() {
 
     const { nodes, edges } = useFlowStore();
     const [storageInfo, setStorageInfo] = useState(getStorageInfo());
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
     // Update storage info when nodes/edges change
@@ -60,7 +50,6 @@ export function PersistenceControls() {
         clearStorage();
         setStorageInfo(getStorageInfo());
         setLastSaved(null);
-        setIsDialogOpen(false);
     };
 
     const formatFileSize = (bytes: number) => {
@@ -123,72 +112,23 @@ export function PersistenceControls() {
                     </TooltipContent>
                 </Tooltip>
 
-                {/* Storage info dialog */}
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                >
-                                    <Info className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Storage information</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Storage Information</DialogTitle>
-                            <DialogDescription>
-                                Current flow storage status and controls
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium">Nodes</p>
-                                    <Badge variant="secondary">{storageInfo.nodeCount}</Badge>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium">Connections</p>
-                                    <Badge variant="secondary">{storageInfo.edgeCount}</Badge>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium">Storage Size</p>
-                                    <Badge variant="secondary">{formatFileSize(storageInfo.size)}</Badge>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium">Status</p>
-                                    <Badge variant={storageInfo.hasData ? "default" : "destructive"}>
-                                        {storageInfo.hasData ? "Persisted" : "Empty"}
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            {storageInfo.hasData && (
-                                <div className="pt-4 border-t">
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={handleClearStorage}
-                                        className="w-full"
-                                    >
-                                        <RotateCcw className="h-4 w-4 mr-2" />
-                                        Clear Storage & Reset
-                                    </Button>
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        This will remove all saved data and reset to default state
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                {/* Reset button */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleClearStorage}
+                            className="h-8 w-8 p-0"
+                            disabled={!storageInfo.hasData}
+                        >
+                            <RotateCcw className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Clear storage & reset flow</p>
+                    </TooltipContent>
+                </Tooltip>
             </div>
         </TooltipProvider>
     );
