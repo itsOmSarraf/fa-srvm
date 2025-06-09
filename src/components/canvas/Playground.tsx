@@ -130,7 +130,18 @@ export const Playground = () => {
 
     // CRITICAL: Handle keyboard deletion manually to ensure it goes through the store
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeId) {
+        // Check if user is interacting with any input/textarea/contenteditable element
+        const activeElement = document.activeElement;
+        const isInputFocused = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            (activeElement as HTMLElement).contentEditable === 'true' ||
+            activeElement.classList.contains('ProseMirror') || // For rich text editors
+            activeElement.closest('[contenteditable="true"]') ||
+            activeElement.closest('.transition-input') // Specific class for transition inputs
+        );
+
+        if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeId && !isInputFocused) {
             event.preventDefault();
 
             // Don't delete protected nodes

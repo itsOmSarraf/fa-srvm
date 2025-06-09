@@ -187,53 +187,80 @@ export const NodeConfigPanel: React.FC = () => {
             return null; // End call nodes don't have transitions
         }
 
+        const handleTransitionKeyDown = (e: React.KeyboardEvent, transitionId: string) => {
+            if (e.key === 'Backspace' && (e.target as HTMLInputElement).value === '') {
+                e.preventDefault();
+                handleRemoveTransition(transitionId);
+            } else if (e.key === 'Delete' && (e.target as HTMLInputElement).value === '') {
+                e.preventDefault();
+                handleRemoveTransition(transitionId);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddTransition();
+            }
+        };
+
         return (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <ArrowRight className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium text-gray-700">Transition</span>
+            <Card>
+                <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                            <ArrowRight className="h-4 w-4" />
+                            Transitions
+                        </CardTitle>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAddTransition}
+                            className="h-7 px-2"
+                            title="Add new transition (or press Enter in any transition field)"
+                        >
+                            <Plus className="h-3 w-3" />
+                        </Button>
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddTransition}
-                        className="h-8 px-3"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
-                </div>
-
-                <div className="space-y-3">
-                    {selectedNode.data.transitions?.map((transition, index) => (
-                        <div key={transition.id} className="flex items-center gap-3 group">
-                            <div className="w-4 h-4 border-2 border-gray-400 rounded-full flex-shrink-0"></div>
-                            <div className="flex-1">
-                                <Input
-                                    value={transition.label}
-                                    onChange={(e) => handleUpdateTransition(transition.id, { label: e.target.value })}
-                                    placeholder="Describe the transition condition"
-                                    className="border-none bg-transparent text-gray-600 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                                />
+                </CardHeader>
+                <CardContent className="pt-2">
+                    <div className="space-y-2">
+                        {selectedNode.data.transitions?.map((transition, index) => (
+                            <div key={transition.id} className="flex items-center gap-2 group bg-white border rounded-md p-2 hover:border-blue-200 transition-colors">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                <div className="flex-1">
+                                    <Input
+                                        value={transition.label}
+                                        onChange={(e) => handleUpdateTransition(transition.id, { label: e.target.value })}
+                                        onKeyDown={(e) => handleTransitionKeyDown(e, transition.id)}
+                                        placeholder={`Transition ${index + 1} (e.g., "If user says yes", "On timeout")`}
+                                        className="transition-input border-none bg-transparent text-gray-700 p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400"
+                                    />
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveTransition(transition.id)}
+                                    className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-gray-400 hover:text-red-600 transition-opacity"
+                                    title="Delete transition (or press Backspace/Delete on empty field)"
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </Button>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveTransition(transition.id)}
-                                className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-gray-400 hover:text-red-600 cursor-pointer"
-                            >
-                                <Trash2 className="h-3 w-3" />
-                            </Button>
-                        </div>
-                    ))}
-                </div>
-
-                {selectedNode.data.transitions.length === 0 && (
-                    <div className="text-center py-4 text-gray-500 text-sm">
-                        No transitions defined
+                        ))}
                     </div>
-                )}
-            </div>
+
+                    {selectedNode.data.transitions.length === 0 && (
+                        <div className="text-center py-6 text-gray-500 text-sm bg-gray-50 border rounded-md">
+                            <ArrowRight className="h-4 w-4 mx-auto mb-2 text-gray-400" />
+                            <p>No transitions defined</p>
+                            <p className="text-xs text-gray-400 mt-1">Click + to add your first transition</p>
+                        </div>
+                    )}
+
+                    <div className="mt-3 text-xs text-gray-500 space-y-1">
+                        <p><strong>Tips:</strong></p>
+                        <p>• Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Enter</kbd> to add a new transition</p>
+                        <p>• Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Backspace</kbd> or <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Delete</kbd> on empty field to remove</p>
+                    </div>
+                </CardContent>
+            </Card>
         );
     };
 
@@ -375,7 +402,7 @@ export const NodeConfigPanel: React.FC = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="flex items-center justify-between p-4 border-b bg-white"
+                className="flex items-center justify-between p-3 border-b bg-white"
             >
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
@@ -412,7 +439,7 @@ export const NodeConfigPanel: React.FC = () => {
                     whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('config')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'config'
+                    className={`px-3 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'config'
                         ? 'border-blue-500 text-blue-600 bg-white'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
@@ -423,7 +450,7 @@ export const NodeConfigPanel: React.FC = () => {
                     whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setActiveTab('global')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'global'
+                    className={`px-3 py-2 text-sm font-medium border-b-2 transition-all duration-200 ${activeTab === 'global'
                         ? 'border-blue-500 text-blue-600 bg-white'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
@@ -433,7 +460,7 @@ export const NodeConfigPanel: React.FC = () => {
             </motion.div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
@@ -447,7 +474,7 @@ export const NodeConfigPanel: React.FC = () => {
                         }}
                     >
                         {activeTab === 'config' ? (
-                            <div className="space-y-6">
+                            <div className="space-y-4">
                                 {/* Basic Configuration */}
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -501,10 +528,10 @@ export const NodeConfigPanel: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="p-4 border-t bg-gray-50"
+                className="p-2 border-t bg-gray-50"
             >
-                <div className="text-xs text-gray-500">
-                    Node ID: {selectedNode.id} | Type: {selectedNode.data.type}
+                <div className="text-xs text-gray-500 text-center">
+                    {selectedNode.id} • {selectedNode.data.type}
                 </div>
             </motion.div>
         </motion.div>

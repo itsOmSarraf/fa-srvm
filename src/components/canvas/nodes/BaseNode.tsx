@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps, useUpdateNodeInternals } from '@xyflow/react';
 import { NodeConfig, useFlowStore } from '@/stores/flowStore';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Edit, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -64,59 +64,29 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
         updateNodeInternals(id);
     }, [nodeData.outputCount, updateNodeInternals, id]);
 
-    const renderOutputHandles = () => {
-        // Only render handles if there's potential for outputs (outputCount > 0)
-        if (nodeData.outputCount <= 0) {
-            return [];
-        }
-
-        const handles = [];
-
-        // All handles aligned with transition labels at bottom (consistent positioning)
-        for (let i = 0; i < nodeData.outputCount; i++) {
-            // Calculate position based on transition label position
-            // Outputs: label is first, then each transition follows
-            // Base: pb-2 (8px) + "Outputs:" line + space-y-1 spacing between items
-            const baseFromBottom = 8; // pb-2 padding
-            const outputsLabelHeight = 16; // text-xs line height ~16px
-            const spacingBetweenItems = 4; // space-y-1 = 4px
-            const transitionLineHeight = 16; // text-xs line height
-
-            // Reverse the index so first transition (i=0) aligns with topmost handle
-            const reverseIndex = nodeData.outputCount - 1 - i;
-            // Position: from bottom + padding + "Outputs:" label + spacing + (reverseIndex * (line height + spacing))
-            const fromBottom = baseFromBottom + outputsLabelHeight + spacingBetweenItems + (reverseIndex * (transitionLineHeight + spacingBetweenItems));
-
-            handles.push(
-                <Handle
-                    key={`output-${i}`}
-                    type="source"
-                    position={Position.Right}
-                    id={`output-${i}`}
-                    style={{
-                        bottom: `${fromBottom}px`,
-                        top: 'auto',
-                        backgroundColor: colorTheme.primary,
-                        width: '12px',
-                        height: '12px',
-                        border: '2px solid white',
-                    }}
-                />
-            );
-        }
-
-        return handles;
-    };
-
-    const renderTransitionLabels = () => {
+    const renderTransitionsWithHandles = () => {
         return (
             <div className="px-3 pb-2 relative space-y-1">
                 <div className="text-xs text-gray-500">Outputs:</div>
                 {nodeData.outputCount > 0 && nodeData.transitions?.slice(0, nodeData.outputCount).map((transition, index) => (
-                    <div key={transition.id} className="relative">
+                    <div key={transition.id} className="relative flex items-center justify-between">
                         <span className="text-xs" style={{ color: colorTheme.primary }}>
                             {transition?.label || `Transition ${index + 1}`}
                         </span>
+                        <Handle
+                            type="source"
+                            position={Position.Right}
+                            id={`output-${index}`}
+                            style={{
+                                position: 'relative',
+                                right: '-12px',
+                                backgroundColor: colorTheme.primary,
+                                width: '12px',
+                                height: '12px',
+                                border: '2px solid white',
+                                transform: 'none',
+                            }}
+                        />
                     </div>
                 ))}
                 {nodeData.outputCount === 0 && (
@@ -129,7 +99,7 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
     };
 
     return (
-        <div className={`relative bg-white border-2 rounded-lg shadow-lg min-w-[200px] ${selected
+        <div className={`group relative bg-white border-2 rounded-lg shadow-lg w-[240px] ${selected
             ? `${colorTheme.borderSelected} ring-2 ${colorTheme.ringSelected}`
             : colorTheme.border
             }`}>
@@ -174,31 +144,31 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsEditingLabel(true)}
-                                className="nodrag h-6 w-6 p-0 hover:bg-gray-100"
+                                className="nodrag h-6 w-6 p-0 hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
                                 title="Edit label"
                             >
-                                ✏️
+                                <Edit className="h-3 w-3" />
                             </Button>
                         )}
                         {isEditingLabel && (
                             <>
                                 <Button
-                                    variant="default"
+                                    variant="ghost"
                                     size="sm"
                                     onClick={handleLabelSave}
-                                    className="nodrag h-6 w-6 p-0 bg-green-600 hover:bg-green-700 text-white"
+                                    className="nodrag h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                                     title="Save"
                                 >
-                                    ✓
+                                    <Check className="h-3 w-3" />
                                 </Button>
                                 <Button
-                                    variant="default"
+                                    variant="ghost"
                                     size="sm"
                                     onClick={handleLabelCancel}
-                                    className="nodrag h-6 w-6 p-0 bg-red-600 hover:bg-red-700 text-white"
+                                    className="nodrag h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                     title="Cancel"
                                 >
-                                    ✕
+                                    <X className="h-3 w-3" />
                                 </Button>
                             </>
                         )}
@@ -211,11 +181,8 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
                 {renderContent(nodeData)}
             </div>
 
-            {/* Transition Labels */}
-            {renderTransitionLabels()}
-
-            {/* Output handles */}
-            {renderOutputHandles()}
+            {/* Transitions with integrated handles */}
+            {renderTransitionsWithHandles()}
         </div>
     );
 }; 

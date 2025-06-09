@@ -37,10 +37,9 @@ export function SidebarRight() {
                 >
                     <SidebarProvider>
                         <Sidebar side="right" className="mt-20 w-80 h-full border-l border-gray-200 shadow-lg">
-                            <SidebarContent>
-                                <SidebarGroup>
-                                    <SidebarGroupLabel>Node Configuration</SidebarGroupLabel>
-                                    <SidebarGroupContent>
+                            <SidebarContent className="p-0">
+                                <SidebarGroup className="p-0">
+                                    <SidebarGroupContent className="p-0">
                                         <NodeConfigPanel />
                                     </SidebarGroupContent>
                                 </SidebarGroup>
