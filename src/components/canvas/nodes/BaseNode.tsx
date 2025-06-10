@@ -67,7 +67,7 @@ export const BaseNode: React.FC<BaseNodeProps> = ({
     const renderTransitionsWithHandles = () => {
         return (
             <div className="px-3 pb-2 relative space-y-1">
-                <div className="text-xs text-gray-500">Outputs:</div>
+                <div className="text-xs text-gray-500">Transitions:</div>
                 {nodeData.outputCount > 0 && nodeData.transitions?.slice(0, nodeData.outputCount).map((transition, index) => (
                     <div key={transition.id} className="relative flex items-center justify-between">
                         <span className="text-xs" style={{ color: colorTheme.primary }}>
