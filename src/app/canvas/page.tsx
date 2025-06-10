@@ -37,7 +37,7 @@ function Page() {
                         Desktop Required
                     </h1>
                     <p className="text-lg text-gray-300 mb-2">
-                        Can't view on mobile
+                        Can&apos;t view on mobile
                     </p>
                     <p className="text-base text-gray-400">
                         Kindly switch to laptop or desktop for the best experience
