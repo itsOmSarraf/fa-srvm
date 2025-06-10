@@ -1,11 +1,15 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Hash, Cog, Phone, Grid3X3, Square, Plus, GripVertical, Maximize2 } from 'lucide-react';
+'use client';
+
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Hash, Cog, Phone, Grid3X3, Square, Plus, GripVertical, Maximize2, Grid, GitBranch, Circle, Zap, ChevronDown, Waves } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
-import { useFlowStore, NodeTypeKey } from '@/stores/flowStore';
+import { useFlowStore, NodeTypeKey, FlowNode } from '@/stores/flowStore';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSmartNodePlacement } from '@/hooks/useSmartNodePlacement';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useAutoLayout } from '@/hooks/useAutoLayout';
+import { cn } from '@/lib/utils';
 
 const nodeTypes = [
     {
@@ -45,15 +49,71 @@ const nodeTypes = [
     }
 ];
 
+// Layout algorithm definitions for the UI
+interface LayoutAlgorithm {
+    name: string;
+    icon: typeof Grid;
+    description: string;
+    action: () => void;
+}
+
 export const NodeCreationToolbar: React.FC = () => {
     const { isSidebarCollapsed, selectedNodeId } = useFlowStore();
     const { addNodeSmart } = useSmartNodePlacement();
     const { fitView } = useReactFlow();
     const { keyboardHintVisible } = useKeyboardShortcuts();
+
+    const {
+        applyGridLayout,
+        applyHierarchicalLayout,
+        applyCircularLayout,
+        applyForceLayout,
+        applyOrganicLayout
+    } = useAutoLayout();
+
+    const layoutAlgorithms = useMemo(() => [
+        {
+            id: 'grid',
+            name: 'Grid Layout',
+            description: 'Arrange nodes in a neat grid pattern',
+            icon: Grid,
+            action: applyGridLayout
+        },
+        {
+            id: 'hierarchical',
+            name: 'Hierarchical Layout',
+            description: 'Edge-aware flow hierarchy',
+            icon: GitBranch,
+            action: applyHierarchicalLayout
+        },
+        {
+            id: 'circular',
+            name: 'Circular Layout',
+            description: 'Arrange nodes in a circle',
+            icon: Circle,
+            action: applyCircularLayout
+        },
+        {
+            id: 'force',
+            name: 'Force Layout',
+            description: 'Physics-based simulation',
+            icon: Zap,
+            action: applyForceLayout
+        },
+        {
+            id: 'organic',
+            name: 'Organic Layout',
+            description: 'Natural flowing arrangement',
+            icon: Waves,
+            action: applyOrganicLayout
+        }
+    ], [applyGridLayout, applyHierarchicalLayout, applyCircularLayout, applyForceLayout, applyOrganicLayout]);
+
     const [position, setPosition] = useState({ x: 0, y: 0 }); // Track both X and Y now
     const [isDragging, setIsDragging] = useState(false);
     const [showToolbar, setShowToolbar] = useState(false);
     const [isInitialShow, setIsInitialShow] = useState(true); // Track if this is the first time showing
+    const [showLayoutMenu, setShowLayoutMenu] = useState(false);
     const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number }>({
         startX: 0, startY: 0, startPosX: 0, startPosY: 0
     });
@@ -120,8 +180,6 @@ export const NodeCreationToolbar: React.FC = () => {
         }
     }, [selectedNodeId, showToolbar, isInitialShow, adjustPositionToVisibleArea]);
 
-
-
     const handleQuickAdd = useCallback((nodeType: NodeTypeKey) => {
         addNodeSmart(nodeType);
     }, [addNodeSmart]);
@@ -132,6 +190,22 @@ export const NodeCreationToolbar: React.FC = () => {
             padding: 0.1,
             duration: 500
         });
+    }, [fitView]);
+
+    const handleAutoLayout = useCallback((algorithm: LayoutAlgorithm) => {
+        // Execute the layout algorithm
+        algorithm.action();
+
+        // Fit view after layout
+        setTimeout(() => {
+            fitView({
+                maxZoom: 0.7,
+                padding: 0.1,
+                duration: 500
+            });
+        }, 100);
+
+        setShowLayoutMenu(false);
     }, [fitView]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -195,6 +269,11 @@ export const NodeCreationToolbar: React.FC = () => {
         return { x: position.x, y: position.y };
     };
 
+    const handleLayoutSelect = (algorithm: typeof layoutAlgorithms[0]) => {
+        algorithm.action();
+        setShowLayoutMenu(false);
+    };
+
     return (
         <>
             {/* Main Toolbar */}
@@ -220,7 +299,6 @@ export const NodeCreationToolbar: React.FC = () => {
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <GripVertical className="h-3 w-3 text-gray-400" />
-                                {/* <span className="text-xs font-medium text-gray-600 ml-1 hidden sm:block">Quick Add</span> */}
                             </motion.div>
 
                             <div className="w-px h-6 bg-gray-200 mx-1"></div>
@@ -265,6 +343,52 @@ export const NodeCreationToolbar: React.FC = () => {
                             {/* Separator */}
                             <div className="w-px h-6 bg-gray-200 mx-1"></div>
 
+                            {/* Auto-Layout Section */}
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-medium text-gray-900 mb-3">Auto-Layout</h3>
+                                <div className="relative">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowLayoutMenu(!showLayoutMenu)}
+                                        className="w-full justify-between h-9 text-sm border-purple-200 hover:border-purple-300 hover:bg-purple-50 transition-colors"
+                                    >
+                                        <span className="text-gray-700">Choose Layout Algorithm</span>
+                                        <ChevronDown className={cn(
+                                            "h-4 w-4 text-purple-600 transition-transform duration-200",
+                                            showLayoutMenu && "rotate-180"
+                                        )} />
+                                    </Button>
+
+                                    {showLayoutMenu && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-purple-200 rounded-md shadow-lg z-50 animate-in slide-in-from-top-2 duration-200">
+                                            {layoutAlgorithms.map((algorithm) => {
+                                                const IconComponent = algorithm.icon;
+                                                return (
+                                                    <button
+                                                        key={algorithm.id}
+                                                        onClick={() => handleLayoutSelect(algorithm)}
+                                                        className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-purple-50 transition-colors first:rounded-t-md last:rounded-b-md text-left"
+                                                    >
+                                                        <IconComponent className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-medium text-gray-900">
+                                                                {algorithm.name}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                {algorithm.description}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Separator */}
+                            {/* <div className="w-px h-6 bg-gray-200 mx-1"></div> */}
+
                             {/* Fit View Control */}
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
@@ -290,6 +414,14 @@ export const NodeCreationToolbar: React.FC = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Click outside to close layout menu */}
+            {showLayoutMenu && (
+                <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowLayoutMenu(false)}
+                />
+            )}
         </>
     );
 };

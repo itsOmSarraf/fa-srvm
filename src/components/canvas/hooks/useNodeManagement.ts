@@ -7,7 +7,7 @@ import {
 	type Node,
 	type Edge
 } from '@xyflow/react';
-import { type CustomNodeData } from '../nodes';
+import { type CustomNodeData } from '../utils';
 
 export const useNodeManagement = (
 	initialNodes: Node<CustomNodeData>[],

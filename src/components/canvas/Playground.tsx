@@ -10,7 +10,7 @@ import {
     type Edge,
     type NodeMouseHandler,
 } from '@xyflow/react';
-import { nodeTypes } from './nodes';
+import { nodeTypes } from './utils';
 import { edgeTypes } from './edges';
 import { useFlowStore } from '@/stores/flowStore';
 import { NodeCreationToolbar } from './NodeCreationToolbar';

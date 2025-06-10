@@ -1,5 +1,5 @@
 import { type Node } from '@xyflow/react';
-import { type CustomNodeData } from '../nodes';
+import { type CustomNodeData } from '.';
 
 export const createNode = (
 	id: string,
